@@ -1,0 +1,10 @@
+{
+  "experimental": {
+    "outputFileTracingIncludes": {
+      "/*": [
+        "./cache/**/*"
+      ]
+    },
+    "serverComponentsExternalPackages": ["pdf2json"]
+  }
+}
