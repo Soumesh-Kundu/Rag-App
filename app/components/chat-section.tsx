@@ -6,7 +6,7 @@ import { insertDataIntoMessages } from "./transform";
 import { ChatInput, ChatMessages } from "./ui/chat";
 import NewChat from "./new-chat-section";
 type ChatSectionProps={
-  revalidationRoot:()=>void
+  revalidationRoot:()=>Promise<void>
 }
 export default function ChatSection({revalidationRoot}:ChatSectionProps) {
   const {
@@ -28,15 +28,6 @@ export default function ChatSection({revalidationRoot}:ChatSectionProps) {
   const transformedMessages = useMemo(() => {
     return insertDataIntoMessages(messages, data);
   }, [messages, data]);
-  // useEffect(()=>{
-  //   // async function registerLoaders(){
-  //   //   const {dotWave}=await import('ldrs')
-  //   //   dotWave.register()
-  //   //   console.log("ldrs loaded")
-  //   // }
-  //   console.log("loadin loader")
-  //   // registerLoaders()
-  // },[])
   return (
     <div className="space-y-4 max-w-5xl w-full">
       <NewChat revalidationRoot={revalidationRoot}/>
