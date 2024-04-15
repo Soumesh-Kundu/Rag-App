@@ -5,10 +5,7 @@ import { useEffect, useMemo } from "react";
 import { insertDataIntoMessages } from "./transform";
 import { ChatInput, ChatMessages } from "./ui/chat";
 import NewChat from "./new-chat-section";
-type ChatSectionProps={
-  revalidationRoot:()=>Promise<void>
-}
-export default function ChatSection({revalidationRoot}:ChatSectionProps) {
+export default function ChatSection() {
   const {
     messages,
     input,
@@ -30,7 +27,7 @@ export default function ChatSection({revalidationRoot}:ChatSectionProps) {
   }, [messages, data]);
   return (
     <div className="space-y-4 max-w-5xl w-full">
-      <NewChat revalidationRoot={revalidationRoot}/>
+      <NewChat/>
       <ChatMessages
         messages={transformedMessages}
         isLoading={isLoading}

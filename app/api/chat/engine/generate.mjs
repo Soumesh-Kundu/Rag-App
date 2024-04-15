@@ -9,8 +9,8 @@ import * as dotenv from "dotenv";
 
 import { CHUNK_OVERLAP, CHUNK_SIZE, STORAGE_CACHE_DIR } from "./constants.mjs";
 import { getDocuments } from "./loader.mjs";
-import { readFile } from "fs/promises";
-import { readFileSync } from "fs";
+import { cleanData, extractKeyword } from "../cleaner/index.mjs";
+import { initVectorDB } from "../../generate/vectorDB";
 
 // Load environment variables from local .env file
 dotenv.config();
@@ -26,14 +26,17 @@ export async function generateDatasource(serviceContext) {
   console.log(`Generating storage context...`);
   // Split documents, create embeddings and store them in the storage context
   const ms = await getRuntime(async () => {
+    const vectorStore = initVectorDB()
     const storageContext = await storageContextFromDefaults({
-      persistDir: STORAGE_CACHE_DIR,
+      vectorStore: vectorStore
     });
     try {
-      const documents = await getDocuments();
+      let documents = await getDocuments()
+      console.log("documents length = ", documents.length)
+      documents = await extractKeyword(documents)
       await VectorStoreIndex.fromDocuments(documents, {
         storageContext,
-        serviceContext,
+        serviceContext
       });
     } catch (error) {
       console.log(error)
@@ -51,4 +54,3 @@ export async function BuildVectorData() {
   await generateDatasource(serviceContext);
   console.log("Finished generating storage.");
 };
-await BuildVectorData()

@@ -16,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={`gap-10 grid place-items-center background-gradient min-h-screen w-full ${inter.className}`}>{children}</body>
     </html>
   );
 }

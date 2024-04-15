@@ -1,5 +1,5 @@
 import { initObservability } from "@/app/observability";
-import { StreamingTextResponse } from "ai";
+import { StreamingTextResponse,OpenAIStream } from "ai";
 import { ChatMessage, MessageContent, OpenAI } from "llamaindex";
 import { NextRequest, NextResponse } from "next/server";
 import { createChatEngine } from "./engine";
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     const chatEngine = await createChatEngine(llm);
 
-    // Convert message content from Vercel/AI format to LlamaIndex/OpenAI format
+    // // Convert message content from Vercel/AI format to LlamaIndex/OpenAI format
     const userMessageContent = convertMessageContent(
       userMessage.content,
       data?.imageUrl,

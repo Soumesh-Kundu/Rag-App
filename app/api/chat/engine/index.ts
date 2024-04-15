@@ -7,6 +7,7 @@ import {
   VectorStoreIndex,
 } from "llamaindex";
 import { CHUNK_OVERLAP, CHUNK_SIZE, STORAGE_CACHE_DIR } from "./constants.mjs";
+import { initVectorDB } from "../../generate/vectorDB";
 
 async function getDataSource(llm: LLM) {
   const serviceContext = serviceContextFromDefaults({
@@ -14,22 +15,12 @@ async function getDataSource(llm: LLM) {
     chunkSize: CHUNK_SIZE,
     chunkOverlap: CHUNK_OVERLAP,
   });
+  const vectorStore=initVectorDB()
   const storageContext = await storageContextFromDefaults({
-    persistDir: `${STORAGE_CACHE_DIR}`,
+    vectorStore:vectorStore
   });
 
-  const numberOfDocs = Object.keys(
-    (storageContext.docStore as SimpleDocumentStore).toDict(),
-  ).length;
-  if (numberOfDocs === 0) {
-    throw new Error(
-      `StorageContext is empty - call 'npm run generate' to generate the storage first`,
-    );
-  }
-  return await VectorStoreIndex.init({
-    storageContext,
-    serviceContext,
-  });
+  return await VectorStoreIndex.fromVectorStore(vectorStore,serviceContext);
 }
 
 export async function createChatEngine(llm: LLM) {

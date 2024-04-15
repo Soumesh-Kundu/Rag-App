@@ -1,36 +1,11 @@
-This is a [LlamaIndex](https://www.llamaindex.ai/) project using [Next.js](https://nextjs.org/) bootstrapped with [`create-llama`](https://github.com/run-llama/LlamaIndexTS/tree/main/packages/create-llama).
+# Run to parse pdfs
 
-## Getting Started
+1. store the pdf file in the folder "sample"
+2. run the app
+3. call the api endpoint on the browser : [localhost:3000/api/chat/cleaner](http://localhost:3000/api/chat/cleaner)
+4. data will be parsed to folder  "result" with filename
 
-First, install the dependencies:
-
-```
-npm install
-```
-
-Second, generate the embeddings of the documents in the `./data` directory (if this folder exists - otherwise, skip this step):
-
-```
-npm run generate
-```
-
-Third, run the development server:
-
-```
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about LlamaIndex, take a look at the following resources:
-
-- [LlamaIndex Documentation](https://docs.llamaindex.ai) - learn about LlamaIndex (Python features).
-- [LlamaIndexTS Documentation](https://ts.llamaindex.ai) - learn about LlamaIndex (Typescript features).
-
-You can check out [the LlamaIndexTS GitHub repository](https://github.com/run-llama/LlamaIndexTS) - your feedback and contributions are welcome!
+## parse new document
+1. delete the previous pdf from sample folder
+2. call the api again from broswer 
+3. new data will be parsed to folder  "result" with filename

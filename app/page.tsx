@@ -7,21 +7,13 @@ import Wrapper from "./components/Wrapper";
 async function dataExists() {
   return existsSync(process.cwd() + "/cache");
 }
-async function revalidateRoot() {
-  "use server";
-  revalidatePath("/");
-}
 export default async function Home() {
   const data = await dataExists();
   return (
-    <main className="gap-10 grid place-items-center background-gradient min-h-screen w-full">
+    <main className="w-full grid place-items-center">
       <Wrapper>
         {/* <Header /> */}
-        {data ? (
-          <ChatSection revalidationRoot={revalidateRoot} />
-        ) : (
-          <FileUpload revalidateRoot={revalidateRoot} />
-        )}
+        <ChatSection />
       </Wrapper>
     </main>
   );

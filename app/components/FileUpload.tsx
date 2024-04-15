@@ -1,22 +1,17 @@
 "use client";
-
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Button } from "./ui/button";
-export default function FileUpload({
-  revalidateRoot,
-}: {
-  revalidateRoot: () => Promise<void>;
-}) {
+export default function FileUpload() {
   const [dragActive, setDragActive] = useState<boolean>(false);
   const inputRef = useRef<any>(null);
   const [files, setFiles] = useState<any>([]);
   const [isLoading, setLoading] = useState<boolean>(false);
-
+  const router=useRouter()
   function handleChange(e: any) {
     e.preventDefault();
     console.log("File has been added");
     if (e.target.files && e.target.files[0]) {
-      console.log(e.target.files);
       for (let i = 0; i < e.target.files["length"]; i++) {
         setFiles((prevState: any) => [...prevState, e.target.files[i]]);
       }
@@ -36,9 +31,9 @@ export default function FileUpload({
         body: formData,
       });
       if (res.ok) {
-        await revalidateRoot();
         setLoading(false);
       }
+      router.push('/')
     } catch (error) {
       setLoading(false);
       console.log(error);

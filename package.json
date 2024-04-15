@@ -6,9 +6,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "generate": "node app\\api\\chat\\engine\\generate.mjs"
+    "generate": "node app\\api\\chat\\engine\\generate.mjs",
+    "extract": "node app/api/chat/cleaner/index.mjs"
   },
   "dependencies": {
+    "@qdrant/js-client-rest": "^1.8.1",
     "@radix-ui/react-slot": "^1.0.2",
     "@types/formidable": "^3.4.5",
     "ai": "^2.2.27",
@@ -16,9 +18,14 @@
     "clsx": "^1.2.1",
     "dotenv": "^16.3.1",
     "ldrs": "^1.0.1",
-    "llamaindex": "latest",
+    "llamaindex": "^0.1.21",
     "lucide-react": "^0.294.0",
     "next": "^14.0.3",
+    "node-pandoc": "^0.3.0",
+    "openai": "^4.32.1",
+    "pdf-parse": "^1.1.1",
+    "pdf2json": "^3.0.5",
+    "pdfreader": "^3.0.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-markdown": "^8.0.7",
@@ -32,6 +39,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.3",
+    "@types/pdf-parse": "^1.1.4",
     "@types/react": "^18.2.42",
     "@types/react-dom": "^18.2.17",
     "@types/react-syntax-highlighter": "^15.5.11",
