@@ -6,5 +6,6 @@
       ]
     },
     "serverComponentsExternalPackages": ["pdf2json"]
-  }
+  },
+  "trailingSlash":true
 }

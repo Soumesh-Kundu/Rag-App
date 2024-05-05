@@ -1,38 +1,18 @@
 import { initObservability } from "@/app/observability";
-import { StreamingTextResponse,OpenAIStream } from "ai";
-import { ChatMessage, MessageContent, OpenAI } from "llamaindex";
+import { StreamingTextResponse,OpenAIStream, experimental_StreamData } from "ai";
 import { NextRequest, NextResponse } from "next/server";
-import { createChatEngine } from "./engine";
-import { LlamaIndexStream } from "./llamaindex-stream";
+import { queryGPT } from "../../../lib/db/vectorDB";
+import { ChatCompletionMessageParam } from "openai/resources/index.mjs";
+import { Message } from "ai/react";
 
 initObservability();
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const convertMessageContent = (
-  textMessage: string,
-  imageUrl: string | undefined,
-): MessageContent => {
-  if (!imageUrl) return textMessage;
-  return [
-    {
-      type: "text",
-      text: textMessage,
-    },
-    {
-      type: "image_url",
-      image_url: {
-        url: imageUrl,
-      },
-    },
-  ];
-};
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { messages, data }: { messages: ChatMessage[]; data: any } = body;
+    const { messages, data }: { messages: Message[]; data: {topK:number,indexName:string} } = body;
     const userMessage = messages.pop();
     if (!messages || !userMessage || userMessage.role !== "user") {
       return NextResponse.json(
@@ -44,35 +24,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const llm = new OpenAI({
-      model: (process.env.MODEL as any) ?? "gpt-3.5-turbo",
-      maxTokens: 512,
-    });
-
-    const chatEngine = await createChatEngine(llm);
-
-    // // Convert message content from Vercel/AI format to LlamaIndex/OpenAI format
-    const userMessageContent = convertMessageContent(
-      userMessage.content,
-      data?.imageUrl,
-    );
-
-    // Calling LlamaIndex's ChatEngine to get a streamed response
-    const response = await chatEngine.chat({
-      message: userMessageContent,
-      chatHistory: messages,
-      stream: true,
-    });
-
-    // Transform LlamaIndex stream to Vercel/AI format
-    const { stream, data: streamData } = LlamaIndexStream(response, {
-      parserOptions: {
-        image_url: data?.imageUrl,
-      },
-    });
-
-    // Return a StreamingTextResponse, which can be consumed by the Vercel/AI client
-    return new StreamingTextResponse(stream, {}, streamData);
+    const addOnData=new experimental_StreamData()
+    const query=userMessage.content
+    const {stream,responses}=await queryGPT(messages as ChatCompletionMessageParam[],query,data.topK,data.indexName)
+    const streamData=OpenAIStream(stream,{
+     experimental_streamData:true,
+     onFinal(){
+      addOnData.close()
+     }
+    })
+    addOnData.append({result:responses})
+    return new StreamingTextResponse(streamData,{},addOnData)
   } catch (error) {
     console.error("[LlamaIndex]", error);
     return NextResponse.json(

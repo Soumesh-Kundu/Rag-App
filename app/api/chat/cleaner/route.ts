@@ -1,101 +1,55 @@
-import { NextResponse } from "next/server";
-import PDFParser from "pdf2json";
 import * as fs from "fs";
+import {readJson} from 'fs-extra'
+import { NextResponse } from "next/server";
+import { getCutOffSize, parsePDF} from "@/lib/scrapper/pdfScrapper";
+const maxChunkWordCount=900
 
-import {
-  cleanData,
-} from "../cleaner/index.mjs";
-// (async ()=>{const dataBuffer=fs.readFileSync('./sample/new.pdf')
-// const data = await pdf(dataBuffer)
-// const text = data.text
-// console.log(text)})()
 export async function GET() {
-  const pdfreader = new PDFParser();
   try {
-    const filename = fs.readdirSync("./sample")[0];
-    let result: { text: string; size: number }[] = [];
-    pdfreader.loadPDF(`./sample/${filename}`);
-    pdfreader.on("pdfParser_dataReady", (data) => {
-      let sameheading = { text: "", size: 0 };
-      let prevheadY = 0;
-      let parsedJson = [];
-      let lastTextSize = 0;
-      let content: { metadata: string[]; text: string } = {
-        metadata: [],
-        text: "",
-      };
-      let fontSizes: { [key: number]: number } = {};
-      for (let page of data.Pages) {
-        for (let text of page.Texts) {
-          const size = text.R[0].TS[1];
-          if (fontSizes[size]) {
-            fontSizes[size]++;
-          } else {
-            fontSizes[size] = 1;
-          }
-        }
-      }
-      let maxFontSize: [string, number] = ["0", 0];
-      for (let [key, value] of Object.entries(fontSizes)) {
-        if (value > maxFontSize[1]) {
-          maxFontSize[0] = key;
-          maxFontSize[1] = value;
-        }
-      }
-      const cutOffFontsize = parseInt(maxFontSize[0]);
-      for (let page of data.Pages) {
-        for (let text of page.Texts) {
-          const [face, size, bold, italic] = text.R[0].TS;
-          if (size > cutOffFontsize && bold === 1) {
-            const heading = decodeURIComponent(text.R[0].T);
-            if (lastTextSize < size) {
-              content.metadata = result
-                .filter((item) => item.text.trim().length)
-                .map((item) => item.text.replaceAll(/\s+/g, " "));
-              parsedJson.push(content);
-              while (result.length && result[result.length - 1].size <= size) {
-                const random = result.pop();
-              }
-              content = { metadata: [], text: "" };
-            }
-            if (text.y !== prevheadY) {
-              if (sameheading.text.length) {
-                result.push(sameheading);
-              }
-              sameheading = { text: heading, size: size };
-            } else {
-              sameheading.text += heading;
-            }
-            prevheadY = text.y;
-          } else {
-            if (sameheading.text.length) {
-              result.push(sameheading);
-              sameheading = { text: "", size: 0 };
-            }
-            content.text += decodeURIComponent(text.R[0].T);
-          }
-          lastTextSize = size;
-        }
-      }
-      if (content.text.length) {
-        content.metadata = content.metadata = result
-          .filter((item) => item.text.trim().length)
-          .map((item) => item.text.replaceAll(/\s+/g, " "));
-        result = [];
-        parsedJson.push(content);
-      }
-      parsedJson = parsedJson.filter((item) => item.text.trim().length > 0);
-      parsedJson = cleanData(parsedJson);
-      fs.writeFileSync(
-        `./result/${filename.split(".")[0]}.json`,
-        JSON.stringify(parsedJson)
-      );
-      console.log("done parsing")
-    });
+    const step=1
+    const cutOffdocs=50
+    const files = await readJson("./sample/test.json") as string[];
+    const requriedFiles=files.slice((step-1)*cutOffdocs,step*cutOffdocs)
+    const response=(await Promise.all(requriedFiles.map( async (file)=>{
+      const res=await fetch(file)
+      if(!res.ok) return []
+      const bidata=Buffer.from(await res.arrayBuffer());
+      const responses = (await parsePDF("",bidata));
+      if(!responses?.data) return []
+      return responses?.data
+    }).flat())).flat()
 
-    return NextResponse.json({ message: "hello world" });
+    const queryKeywords:string[]=['Flood','Flood Risk','Drainage']
+    const queryRegex=new RegExp(queryKeywords.join("|"),"gi")
+    const filteredResponses=response.filter(res=>queryRegex.test(res?.text))
+
+
+    const chunkedResponses=filteredResponses.map(item=>{
+      const wordCounts=item?.text.split(" ").length
+      if(wordCounts<maxChunkWordCount) return item
+
+      const sentences=item.text.split(/\./)
+      const averageWordCounts=wordCounts/sentences.length
+      const cutOffIndex=Math.floor(maxChunkWordCount/averageWordCounts)
+      let step=1
+      const result:typeof item[]=[]
+
+      while((step-1)*cutOffIndex<sentences.length){
+        let text=sentences.slice((step-1)*cutOffIndex,step*cutOffIndex).join(".")
+        result.push({
+          metadata:[...item.metadata],
+          text
+        })
+        step++
+      } 
+      return result
+    }).flat()
+
+    fs.writeFileSync(`./data/withChunking.json`, JSON.stringify(chunkedResponses));
+    return NextResponse.json({ data: "done" });
   } catch (error) {
     console.log(error);
     return NextResponse.json({ messgae: "hel;lo" });
   }
 }
+
