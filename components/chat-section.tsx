@@ -119,16 +119,7 @@ export default function ChatSection() {
           }}
         />
         <div className="flex items-center gap-3">
-          <div
-            // variant="pale-rfull"
-            className={`${buttonVariants({variant:"pale-rfull"})} flex items-center gap-3 bg-white rounded-lg py-2 px-4`}
-          >
-            <Switch
-              checked={isAutoSaveOn}
-              onCheckedChange={() => setAutoSaveOn(!isAutoSaveOn)}
-            />
-            <p className="text-nowrap">Autosave</p>
-          </div>
+          {!isInbox(params.id as string) && <NewChat />}
           {!isInbox(params.id as string) && <Button
             onClick={handleReset}
             variant="destructive-rfull"
@@ -157,7 +148,16 @@ export default function ChatSection() {
               Share
             </Button>
           </ShareRepo>
-         {!isInbox(params.id as string) && <NewChat />}
+          <div
+            // variant="pale-rfull"
+            className={`${buttonVariants({variant:"pale-rfull"})} flex items-center gap-3 bg-white rounded-lg py-2 px-4`}
+          >
+            <Switch
+              checked={isAutoSaveOn}
+              onCheckedChange={() => setAutoSaveOn(!isAutoSaveOn)}
+            />
+            <p className="text-nowrap">Autosave</p>
+          </div>
         </div>
       </div>
       <ChatMessages

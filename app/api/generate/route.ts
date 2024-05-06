@@ -4,13 +4,8 @@ import { parsePDF } from "@/lib/scrapper/pdfScrapper";
 import { extractKeyword } from "@/lib/scrapper/dataCleaning";
 import {
   createDocIndex,
-  inboxConfig,
-  isInbox,
-  pcInbox,
-  pcRepo,
   upsertData,
 } from "@/lib/db/vectorDB";
-import { config } from "@/lib/db/vectorDB";
 type FileInstance = {
   arrayBuffer: () => Promise<Buffer>;
   name: string;

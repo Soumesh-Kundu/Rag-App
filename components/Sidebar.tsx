@@ -13,7 +13,7 @@ import {
 import Image from "next/image";
 import { Separator } from "./ui/separator";
 import { Button } from "./ui/button";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Input } from "./ui/input";
 import { Dialog, DialogClose, DialogContent, DialogTrigger } from "./ui/dialog";
 import { Label } from "./ui/label";
@@ -27,6 +27,7 @@ import {
 } from "./ui/dropdown-menu";
 import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
 import ConfirmationBox from "./ui/confirmation-box";
+import { useThreads } from "./Wrapper";
 
 const repos = [
   { id: 564641, name: "Repo 1", description: "Description of Repo 1" },
@@ -43,7 +44,7 @@ const inboxes = [
 export default function Sidebar({
   threads,
 }: {
-  threads: { id: string; heading: string }[];
+  threads: { id: string; heading: string,createdAt:string }[];
 }) {
   const addRepoRef = useRef<HTMLButtonElement>(null);
   const [addRepoName, setAddRepoName] = useState("");
@@ -54,8 +55,12 @@ export default function Sidebar({
     status: "closed",
     id: "",
   });
+  const {setRepos}=useThreads()
   const router = useRouter();
   const pathname = usePathname();
+  useEffect(()=>{
+    setRepos([...threads.map(repo=>({id:repo.id,name:repo.heading})),...inboxes])
+  },[])
   async function createRepo(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if(isLoading) return;
@@ -109,8 +114,8 @@ export default function Sidebar({
               <Collapsible key={repo.id} open={currentTab === repo.id}>
                 <li
                   key={repo.id}
-                  className={`flex gap-3 items-center py-1 px-4 rounded-l-full cursor-pointer hover:bg-primary group hover:text-secondary font-medium transition-all ${
-                    pathname.includes(repo.id) && "bg-primary text-secondary"
+                  className={`flex gap-3 items-center py-1 px-4 rounded-l-full cursor-pointer hover:bg-violet-600 group hover:text-secondary font-medium transition-all ${
+                    pathname.includes(repo.id) && "bg-violet-600 text-secondary"
                   }`}
                 >
                   <CollapsibleTrigger
@@ -156,9 +161,9 @@ export default function Sidebar({
                     <Link
                       href={`/${repo.id}/query`}
                       replace={pathname === "/"}
-                      className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-primary hover:text-secondary font-medium transition-all ${
+                      className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-violet-800 hover:text-secondary font-medium transition-all ${
                         pathname.includes(`${repo.id}/query`) &&
-                        "bg-primary text-secondary"
+                        "bg-violet-800 text-secondary"
                       }`}
                     >
                       Query
@@ -166,9 +171,9 @@ export default function Sidebar({
                     <Link
                       href={`/${repo.id}/history`}
                       replace={pathname === "/"}
-                      className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-primary hover:text-secondary font-medium transition-all ${
+                      className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-violet-800 hover:text-secondary font-medium transition-all ${
                         pathname.includes(`${repo.id}/history`) &&
-                        "bg-primary text-secondary"
+                        "bg-violet-800 text-secondary"
                       }`}
                     >
                       History
@@ -219,8 +224,8 @@ export default function Sidebar({
               <Collapsible key={inbox.id} open={currentTab === inbox.id}>
                 <li
                   key={inbox.id}
-                  className={`flex gap-3 items-center py-1 px-4 rounded-l-full cursor-pointer hover:bg-primary group hover:text-secondary font-medium transition-all ${
-                    pathname.includes(inbox.id) && "bg-primary text-secondary"
+                  className={`flex gap-3 items-center py-1 px-4 rounded-l-full cursor-pointer hover:bg-violet-600 group hover:text-secondary font-medium transition-all ${
+                    pathname.includes(inbox.id) && "bg-violet-600 text-secondary"
                   }`}
                 >
                   {" "}
@@ -248,9 +253,9 @@ export default function Sidebar({
                     <Link
                       href={`/${inbox.id}/query`}
                       replace={pathname === "/"}
-                      className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-primary hover:text-secondary font-medium transition-all ${
+                      className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-violet-800 hover:text-secondary font-medium transition-all ${
                         pathname.includes(`${inbox.id}/query`) &&
-                        "bg-primary text-secondary"
+                        "bg-violet-800 text-secondary"
                       }`}
                     >
                       Query
@@ -258,9 +263,9 @@ export default function Sidebar({
                     <Link
                       href={`/${inbox.id}/history`}
                       replace={pathname === "/"}
-                      className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-primary hover:text-secondary font-medium transition-all ${
+                      className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-violet-800 hover:text-secondary font-medium transition-all ${
                         pathname.includes(`${inbox.id}/history`) &&
-                        "bg-primary text-secondary"
+                        "bg-violet-800 text-secondary"
                       }`}
                     >
                       History

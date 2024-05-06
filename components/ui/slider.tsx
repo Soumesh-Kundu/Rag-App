@@ -34,7 +34,7 @@ const Slider = React.forwardRef<
           <SliderPrimitive.Range className="absolute h-full bg-slate-900 dark:bg-slate-50" />
         </SliderPrimitive.Track>
         <TooltipTrigger asChild>
-          <SliderPrimitive.Thumb className="block h-5 w-5 rounded-full border-2 border-slate-900 bg-white ring-offset-white transition-colors focus-visible:outline-none -top-1/2 relative   focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:border-slate-50 dark:bg-slate-950  dark:focus-visible:ring-slate-300" />
+          <SliderPrimitive.Thumb className="block cursor-pointer h-5 w-5 rounded-full border-2 border-slate-900 bg-white ring-offset-white transition-colors focus-visible:outline-none -top-1/2 relative   focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:border-slate-50 dark:bg-slate-950  dark:focus-visible:ring-slate-300" />
         </TooltipTrigger>
         <TooltipContent>Top Contexts: {topK}</TooltipContent>
       </SliderPrimitive.Root>
