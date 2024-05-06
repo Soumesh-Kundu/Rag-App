@@ -20,8 +20,12 @@ export default function ShareRepo({ children }: Props) {
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
-        <form onSubmit={handleShareRepo} className="space-y-6">
-          <div className="flex flex-col gap-2">
+        <form onSubmit={handleShareRepo} className="space-y-6 grid grid-cols-3 gap-3">
+          <div className="flex items-cente flex-center py-20 px-10 rounded-lg bg-gray-200">
+            
+              as
+          </div>
+          <div className="flex flex-col gap-2 col-span-2">
             <label htmlFor="invite-email" className="text-lg font-medium">
               Email
             </label>
@@ -32,8 +36,6 @@ export default function ShareRepo({ children }: Props) {
               onChange={handleEmailChange}
               required
             />
-          </div>
-          <div>
             <Button type="submit" disabled={false}>
               Send invite
             </Button>
