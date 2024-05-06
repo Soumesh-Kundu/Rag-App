@@ -6,9 +6,16 @@ import { insertDataIntoMessages } from "./transform";
 import { ChatInput, ChatMessages } from "./ui/chat";
 import NewChat from "./new-chat-section";
 import { Slider } from "./ui/slider";
-import { Button } from "./ui/button";
+import { Button, buttonVariants } from "./ui/button";
 import { useParams, useRouter } from "next/navigation";
 import { Switch } from "./ui/switch";
+import { ShareIcon, TrashIcon } from "@heroicons/react/24/solid";
+import ShareRepo from "./ui/chat/share-repo";
+
+
+function isInbox(name:string){
+  return /gmail|hotmail|zoho/.test(name)
+}
 export default function ChatSection() {
   const {
     messages,
@@ -37,17 +44,17 @@ export default function ChatSection() {
   const [isStreamFinished, setStreamFinished] = useState<boolean>(true);
   const [isAutoSaveOn, setAutoSaveOn] = useState<boolean>(true);
   const transformedMessages = useMemo(() => {
-    return insertDataIntoMessages(messages, data,isAutoSaveOn);
+    return insertDataIntoMessages(messages, data, isAutoSaveOn);
   }, [messages, data]);
   const router = useRouter();
-  const params=useParams()
+  const params = useParams();
   async function handleReset() {
     try {
-      setPending(true);
-      const res=await fetch('/api/reset',{
-        method:"DELETE",
-        body:JSON.stringify({indexName:params.id})
-      })
+      setPending(!isPending);
+      const res = await fetch("/api/reset", {
+        method: "DELETE",
+        body: JSON.stringify({ indexName: params.id }),
+      });
       router.push(`/${params.id}/add`);
     } catch (error) {
       console.log(error);
@@ -77,13 +84,17 @@ export default function ChatSection() {
     }
   }
   useEffect(() => {
-    if (isAutoSaveOn && isStreamFinished && transformedMessages?.at(-1)?.role === "assistant") {
+    if (
+      isAutoSaveOn &&
+      isStreamFinished &&
+      transformedMessages?.at(-1)?.role === "assistant"
+    ) {
       uploadLastMessage();
     }
   }, [transformedMessages, isStreamFinished]);
   return (
     <div className="space-y-4 max-w-6xl w-[calc(100%-2rem)] scrollbar px-2 lg:px-0">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between bg-slate-100/50 backdrop-blur-md rounded-full p-1.5">
         <Slider
           defaultValue={[topK]}
           max={30}
@@ -98,7 +109,7 @@ export default function ChatSection() {
           onMouseLeave={() => {
             setIsHover(false);
           }}
-          className="w-[25%]"
+          className="w-[25%] ml-2"
           onValueChange={(value) => {
             setTopK(value[0]);
           }}
@@ -108,18 +119,45 @@ export default function ChatSection() {
           }}
         />
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-3 bg-white rounded-lg p-2">
-            <Switch checked={isAutoSaveOn} onCheckedChange={() => setAutoSaveOn(!isAutoSaveOn)}/>
-             <p className="text-nowrap">Autosave</p>
+          <div
+            // variant="pale-rfull"
+            className={`${buttonVariants({variant:"pale-rfull"})} flex items-center gap-3 bg-white rounded-lg py-2 px-4`}
+          >
+            <Switch
+              checked={isAutoSaveOn}
+              onCheckedChange={() => setAutoSaveOn(!isAutoSaveOn)}
+            />
+            <p className="text-nowrap">Autosave</p>
           </div>
-          <Button onClick={handleReset} variant="destructive">
+          {!isInbox(params.id as string) && <Button
+            onClick={handleReset}
+            variant="destructive-rfull"
+            className={`flex items-center gap-2 justify-center  ${
+              isPending && "!bg-red-500"
+            }`}
+          >
             {isPending ? (
-              <l-dot-wave size={40} speed={1.6} color="white"></l-dot-wave>
+              <span className="px-2.5">
+                <l-dot-wave size={40} speed={1.6} color="white"></l-dot-wave>
+              </span>
             ) : (
-              "Reset"
+              <>
+                <TrashIcon className="w-4 h-4" />
+                Reset
+              </>
             )}
-          </Button>
-          <NewChat />
+          </Button>}
+          <ShareRepo>
+            <Button
+              onClick={() => {}}
+              variant={"blue-rfull"}
+              className="flex items-center gap-2"
+            >
+              <ShareIcon className="w-4 h-4" />
+              Share
+            </Button>
+          </ShareRepo>
+         {!isInbox(params.id as string) && <NewChat />}
         </div>
       </div>
       <ChatMessages

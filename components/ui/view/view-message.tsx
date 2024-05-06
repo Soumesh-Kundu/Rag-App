@@ -79,6 +79,7 @@ export default function ViewMessage({ chatMessage,messageIndex,deleteMessage }: 
   const [isLoading,setLoading]=useState<boolean>(false)
   const router=useRouter()
   async function handleClick(){
+    if(isLoading) return
     setLoading(true)
     try {
       const res=await deleteMessage(messageIndex)

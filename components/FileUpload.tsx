@@ -8,8 +8,8 @@ export default function FileUpload() {
   const inputRef = useRef<any>(null);
   const [files, setFiles] = useState<any>([]);
   const [isLoading, setLoading] = useState<boolean>(false);
-  const router=useRouter()
-  const params=useParams() 
+  const router = useRouter();
+  const params = useParams();
   function handleChange(e: any) {
     e.preventDefault();
     console.log("File has been added");
@@ -26,18 +26,18 @@ export default function FileUpload() {
     }
     setLoading(true);
     const formData = new FormData();
-    formData.append('threadId',params.id as string)
-    for(let file of files){
+    formData.append("threadId", params.id as string);
+    for (let file of files) {
       formData.append("files", file);
     }
-    console.log(formData)
+    console.log(formData);
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         body: formData,
       });
       if (res.ok) {
-        router.push(`/${params.id}/query`)
+        router.push(`/${params.id}/query`);
         setLoading(false);
       }
     } catch (error) {
@@ -89,65 +89,73 @@ export default function FileUpload() {
 
   return (
     // <div className="flex items-start justify-center h-screen">
-    <form
-      className={`${
-        dragActive ? "bg-blue-400" : "bg-gray-100"
-      }  p-4 w-9/12 sm:w-1/2 md:w-1/2 lg:w-5/12 xl:w-1/3 rounded-lg   text-center flex flex-col items-center justify-center`}
-      onDragEnter={handleDragEnter}
-      onSubmit={(e) => e.preventDefault()}
-      onDrop={handleDrop}
-      onDragLeave={handleDragLeave}
-      onDragOver={handleDragOver}
-    >
-      {/* this input element allows us to select files for upload. We make it hidden so we can activate it when the user clicks select files */}
-      <input
-        placeholder="fileInput"
-        className="hidden"
-        ref={inputRef}
-        type="file"
-        multiple
-        onChange={handleChange}
-        accept=".xlsx,.xls,.doc, .docx,.ppt, .pptx,.txt,.pdf"
-      />
+    <div className="space-y-4 max-w-6xl w-full scrollbar px-2 lg:px-0 grid place-items-center">
+      <div className="w-1/3 rounded-xl bg-white p-4 shadow-xl ">
+          <form
+            className={`${
+              dragActive ? "bg-blue-400" : "bg-gray-100"
+            }  p-6 w-full rounded-lg   text-center flex flex-col items-center justify-center`}
+            onDragEnter={handleDragEnter}
+            onSubmit={(e) => e.preventDefault()}
+            onDrop={handleDrop}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+          >
+            {/* this input element allows us to select files for upload. We make it hidden so we can activate it when the user clicks select files */}
+            <input
+              placeholder="fileInput"
+              className="hidden"
+              ref={inputRef}
+              type="file"
+              multiple
+              onChange={handleChange}
+              accept=".xlsx,.xls,.doc, .docx,.ppt, .pptx,.txt,.pdf"
+            />
 
-      <p>
-        Drag & Drop files or{" "}
-        <span
-          className="font-bold text-blue-600 cursor-pointer"
-          onClick={openFileExplorer}
-        >
-          <u>Select files</u>
-        </span>{" "}
-        to upload
-      </p>
+            <p>
+              Drag & Drop files or{" "}
+              <span
+                className="font-bold text-blue-600 cursor-pointer"
+                onClick={openFileExplorer}
+              >
+                <u>Select files</u>
+              </span>{" "}
+              to upload
+            </p>
 
-      <div className="flex flex-col items-center p-3 ">
-        {files.map((file: any, idx: any) => (
-          <div key={idx} className="grid grid-cols-4 place-items-center w-full items-center space-x-5 gap-4">
-            <span className="col-span-3 my-1 place-self-center">{file.name}</span>
-            <span
-              className="text-red-500 cursor-pointer"
-              onClick={() => removeFile(file.name, idx)}
+            <div className="flex flex-col items-center p-3 ">
+              {files.map((file: any, idx: any) => (
+                <div
+                  key={idx}
+                  className="grid grid-cols-4 place-items-center w-full items-center space-x-5 gap-4"
+                >
+                  <span className="col-span-3 my-1 place-self-center">
+                    {file.name}
+                  </span>
+                  <span
+                    className="text-red-500 cursor-pointer"
+                    onClick={() => removeFile(file.name, idx)}
+                  >
+                    <Trash2 strokeWidth={2.3} size={24} />
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <Button
+              className="bg-black rounded-lg  mt-3 w-auto"
+              onClick={handleSubmitFile}
             >
-              <Trash2 strokeWidth={2.3} size={24}/>
-            </span>
-          </div>
-        ))}
+              {isLoading ? (
+                <span className="px-1 ">
+                  <l-dot-wave size={40} speed={1.6} color="white"></l-dot-wave>
+                </span>
+              ) : (
+                <span className="px-1 text-white">Submit</span>
+              )}
+            </Button>
+          </form>
+        </div>
       </div>
-
-      <Button
-        className="bg-black rounded-lg  mt-3 w-auto"
-        onClick={handleSubmitFile}
-      >
-        {isLoading ? (
-          <span className="px-1 ">
-          <l-dot-wave size={40} speed={1.6} color="white"></l-dot-wave>
-          </span>
-        ) : (
-          <span className="px-1 text-white">Submit</span>
-        )}
-      </Button>
-    </form>
-    // </div>
   );
 }

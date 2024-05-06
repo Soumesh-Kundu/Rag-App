@@ -104,7 +104,7 @@ export default function ChatMessage({chatMessage,messageIndex,saveResponse}:Chat
             <ChatMessageData messageData={chatMessage.data} />
           )}
         </div>
-        <div className="flex items-center opacity-0 group-hover:opacity-100 ">
+        <div className="flex items-center  ">
           {chatMessage.role !== "user" && <Button onClick={() => uploadThisMessage()} variant="ghost" size="icon" > 
           {isLoading?<l-ring size={20} color="black" speed={1.6} stroke={1}></l-ring>:
           !chatMessage?.isSaved?

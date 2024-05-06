@@ -38,7 +38,7 @@ export default function ViewSection({ messages }:{messages: MessageBody[]}) {
       <div className="space-y-4 max-w-6xl w-[calc(100%-2rem)] scrollbar px-2 lg:px-0">
         <div className="w-full rounded-xl bg-white p-4 shadow-xl pb-0">
           <div className="flex max-h-[85dvh] scrollbar pr-1 flex-col gap-5 divide-y overflow-y-auto pb-4">
-            {messages.length > 0 ?messages.map((m, index) => (
+            {messages?.length > 0 ?messages.map((m, index) => (
               <ViewMessage key={m.id} chatMessage={m} messageIndex={index} deleteMessage={deleteMessage} />)):
               <div className="w-full h-[85dvh] flex flex-col justify-center items-center font-bold text-2xl text-gray-400 ">
                 <PackageOpen strokeWidth={0.8} size={90} />

@@ -34,4 +34,5 @@ model Messages{
 model Threads{
   id String @id @default(auto()) @map("_id") @db.ObjectId
   heading String
+  createdAt DateTime @default(now())
 }

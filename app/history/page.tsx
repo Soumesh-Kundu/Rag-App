@@ -1,9 +1,8 @@
 import ViewSection from "@/components/view-section";
+export const dynamic = "force-dynamic";
 async function getAllMessages() {
   try {
-    const res = await fetch("http://localhost:3000/api/messages/get",{
-      cache: 'no-cache',
-    });
+    const res = await fetch("http://localhost:3000/api/messages/get");
     if(!res.ok) return []
     const data = await res.json()
 

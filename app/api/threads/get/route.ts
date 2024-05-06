@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db/prismaDB";
 export async function GET(request:NextRequest) {
     try {
-        const data=await db.threads.findMany()
+        const data=await db.threads.findMany({
+            orderBy:{createdAt:"desc"},
+        })
         return NextResponse.json({threads:data,success:true},{status:200})
     } catch (error) {
         console.log(error)

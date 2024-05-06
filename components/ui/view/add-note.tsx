@@ -13,6 +13,7 @@ export default function Addnote({id}:{id:string}) {
   const [comment,setComment]=useState<string>("")
   const [isLoading,setLoading]=useState<boolean>(false)
   async function addComment(){
+    if(isLoading) return
     try {
       setLoading(true)
       const res=await fetch('/api/messages/comment/add',{

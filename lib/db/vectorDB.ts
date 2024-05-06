@@ -8,9 +8,18 @@ import {
 } from "@pinecone-database/pinecone/dist/pinecone-generated-ts-fetch";
 
 const openai = new OpenAI({});
-export const pc = new Pinecone({
-  apiKey: process.env.PINECONE_API_KEY as string,
+export const pcRepo = new Pinecone({
+  apiKey: process.env.PINECONE_REPO_API_KEY as string,
 });
+export const pcInbox = new Pinecone({
+  apiKey: process.env.PINECONE_INBOX_API_KEY as string,
+});
+
+export const inboxConfig=new Map([
+  ['gmail',({indexName:process.env.PINECONE_GMAIL_INDEX_NAME as string,namespace:process.env.PINECONE_GMAIL_NAMESPACE ,threadID:"663657d1e96fbf822661f17e"})],
+  ['hotmail',({indexName:process.env.PINECONE_HOTMAIL_INDEX_NAME as string,namespace:process.env.PINECONE_HOTMAIL_NAMESPACE ,threadID:"663657d1e96fbf822661f17f"})],
+  ['zoho',({indexName:process.env.PINECONE_ZOHO_INDEX_NAME as string,namespace:process.env.PINECONE_ZOHO_NAMESPACE ,threadID:"66326e94b1c1156c4c78992b"})],
+])
 export const config = {
   similarityQuery: {
     // Top results limit
@@ -53,7 +62,7 @@ export async function upsertData(dataToEmbed: EmbeddingData[],indexName:string) 
             // 12. Define index name and unique ID for each embedding
             const id = `${indexName.slice(0,4)}-${config.embeddingID}-${item.id}`;
             // 13. Upsert embedding into Pinecone with new metadata
-            await pc
+            await pcRepo
               .index(indexName)
               .namespace(config.namespace)
               .upsert([
@@ -82,7 +91,9 @@ function getContent(item: string | number | boolean | string[]) {
   }
   return item;
 }
-
+export function isInbox(name:string){
+  return /gmail|hotmail|zoho/.test(name)
+}
 export async function queryGPT(
   messages: ChatCompletionMessageParam[],
   query: string,
@@ -95,15 +106,17 @@ export async function queryGPT(
     input: query,
   });
   // 17. Perform the query
+  const pc=isInbox(indexName)?pcInbox:pcRepo
+  const index=isInbox(indexName)?inboxConfig.get(indexName)?.indexName:indexName
+  const namespace=isInbox(indexName)?inboxConfig.get(indexName)?.namespace:config.namespace
   const queryResult = await pc
-    .index(indexName)
-    .namespace(config.namespace)
+    .index(index as string)
+    .namespace(namespace as string)
     .query({
       ...config.similarityQuery,
       topK: topK,
       vector: queryEmbedding.data[0].embedding,
     });
-  console.log(queryResult.matches.length);
   const content = queryResult.matches
     .map((item) => {
       return (
@@ -111,7 +124,7 @@ export async function queryGPT(
           return acc + `\n${key}:${getContent(item)}`;
         }, "") + "\n"
       );
-    })
+    }) 
     .join("---");
   const prompt = `
   hello please answer the question from the given context below in the following Context Section. answer the question using only that information make it more human like with your creativity. If you are unsure and the answer is not written in the Context try to answer withthe previous messages otherwise say Apolgies appropiately but don't make it too long and Please do not write URLs that you cannot find in the context section
@@ -151,14 +164,14 @@ export async function queryGPT(
 
 export async function createDocIndex(indexName: string,safetyCheck:boolean=false) {
   if (safetyCheck ) {
-    let indexExists = (await pc.listIndexes()).indexes?.some(
+    let indexExists = (await pcRepo.listIndexes()).indexes?.some(
       (index) => index.name === indexName
     );
     if (indexExists) return
     // console.log("index already exists");
     return;
   }
-  await pc.createIndex({
+  await pcRepo.createIndex({
     name: indexName,
     dimension: config.dimension,
     metric: config.metric,
@@ -168,11 +181,11 @@ export async function createDocIndex(indexName: string,safetyCheck:boolean=false
 }
 export async function deleteDocIndex(indexName: string,safetyCheck:boolean=false) {
   if (safetyCheck) {
-    let indexExists = (await pc.listIndexes()).indexes?.some(
+    let indexExists = (await pcRepo.listIndexes()).indexes?.some(
       (index) => index.name === indexName
     );
     if(!indexExists) return;
   }
-  await pc.deleteIndex(indexName);
+  await pcRepo.deleteIndex(indexName);
   console.log("index deleted");
 }

@@ -10,6 +10,7 @@
     "extract": "node app/api/chat/cleaner/index.mjs"
   },
   "dependencies": {
+    "@heroicons/react": "^2.1.3",
     "@pinecone-database/pinecone": "^2.2.0",
     "@prisma/client": "^5.13.0",
     "@radix-ui/react-collapsible": "^1.0.3",

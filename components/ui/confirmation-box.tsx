@@ -28,6 +28,7 @@ export default function ConfirmationBox({
   }, [status]);
 
   async function handleConfirm() {
+    if(isLoading) return;
     setIsLoading(true);
     setTimeout(() => {
       setIsHidden(true);
@@ -52,7 +53,7 @@ export default function ConfirmationBox({
       <DialogTrigger ref={BoxTriggerRef}></DialogTrigger>
       <DialogContent className="max-w-sm p-10 flex flex-col gap-8 items-center">
         <span className="w-[calc(100%-20px)] text-center">
-          Are you sure to delete <strong>{itemName.slice(0, 25)}</strong> ?
+          Are you sure to delete <strong>{itemName.slice(0, 25)}</strong> and all its history and data ?
         </span>
         <div className="w-full flex items-center gap-3 justify-around">
           <Button
@@ -66,7 +67,7 @@ export default function ConfirmationBox({
               "Yes"
             )}
           </Button>
-          <DialogClose ref={BoxCloseRef}>
+          <DialogClose ref={BoxCloseRef} asChild>
             <Button
               variant="outline"
               className={`px-12 duration-200 w-full transition-all ease-linear scale-100 ${

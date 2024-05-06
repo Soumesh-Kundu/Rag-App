@@ -5,6 +5,7 @@ import ChatActions from "./chat-actions";
 import ChatMessage from "./chat-message";
 import { ChatHandler } from "./chat.interface";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useParams } from "next/navigation";
 
 export default function ChatMessages(
   props: Pick<ChatHandler, "messages" | "isLoading" | "reload" | "stop">
@@ -32,7 +33,7 @@ export default function ChatMessages(
   // that stream response is not yet received from the server,
   // so we show a loading indicator to give a better UX.
   const isPending = props.isLoading && !isLastMessageFromAssistant;
-
+  const params=useParams()
   useEffect(() => {
     scrollToBottom();
   }, [messageLength, lastMessage]);
@@ -52,7 +53,7 @@ export default function ChatMessages(
       method: "POST",
       body: JSON.stringify({
         messages: message,
-        threadID: "66326e94b1c1156c4c78992b",
+        threadID: params.id,
       }),
     });
     if (res.ok) {
