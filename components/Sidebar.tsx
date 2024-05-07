@@ -134,7 +134,7 @@ export default function Sidebar({
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
-                        className={`bg-transparent p-2 w-9 h-9 text-primary group-hover:text-secondary ${
+                        className={`!bg-transparent focus:!border-none focus:!outline-none focus:!ring-0 p-2 w-9 h-9 text-primary hover:!bg-violet-700 group-hover:text-secondary ${
                           pathname.includes(repo.id) && "text-secondary"
                         }`}
                       >
