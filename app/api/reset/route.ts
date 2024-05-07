@@ -1,9 +1,9 @@
-import { createDocIndex, deleteDocIndex, pc } from "@/lib/db/vectorDB";
+import { createDocIndex, deleteDocIndex, pcInbox } from "@/lib/db/vectorDB";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(request: NextRequest) {
 const {indexName}=await request.json()
-  let indexExists = (await pc.listIndexes()).indexes?.some(
+  let indexExists = (await pcInbox.listIndexes()).indexes?.some(
     (index) => index.name === indexName
   );
   try {
