@@ -7,7 +7,7 @@ const maxChunkWordCount=900
 export async function GET() {
   try {
     const step=1
-    const cutOffdocs=50
+    const cutOffdocs=50 // number of first total documents to extract
     const files = await readJson("./sample/test.json") as string[];
     const requriedFiles=files.slice((step-1)*cutOffdocs,step*cutOffdocs)
     const response=(await Promise.all(requriedFiles.map( async (file)=>{
@@ -19,7 +19,7 @@ export async function GET() {
       return responses?.data
     }).flat())).flat()
 
-    const queryKeywords:string[]=['Flood','Flood Risk','Drainage']
+    const queryKeywords:string[]=['Flood','Flood Risk','Drainage'] // key words to look for
     const queryRegex=new RegExp(queryKeywords.join("|"),"gi")
     const filteredResponses=response.filter(res=>queryRegex.test(res?.text))
 
@@ -45,7 +45,7 @@ export async function GET() {
       return result
     }).flat()
 
-    fs.writeFileSync(`./data/withChunking.json`, JSON.stringify(chunkedResponses));
+    fs.writeFileSync(`./data/extractedParagraphs.json`, JSON.stringify(chunkedResponses));
     return NextResponse.json({ data: "done" });
   } catch (error) {
     console.log(error);
