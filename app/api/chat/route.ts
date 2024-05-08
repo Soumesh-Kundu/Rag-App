@@ -1,11 +1,9 @@
-import { initObservability } from "@/app/observability";
 import { StreamingTextResponse,OpenAIStream, experimental_StreamData } from "ai";
 import { NextRequest, NextResponse } from "next/server";
 import { queryGPT } from "../../../lib/db/vectorDB";
 import { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import { Message } from "ai/react";
 
-initObservability();
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
