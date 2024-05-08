@@ -29,6 +29,7 @@ export async function parsePDF(
   biData: Buffer
 ): Promise<{ filename: string; data: CleanData[] } | undefined> {
   const pdfreader = new pdfParser();
+  const ThressholdWordCount=parseInt(process.env.THRESSHOLD_WORD_COUNT as string) ?? 100
   try {
     const res: { filename: string; data: CleanData[] } = await new Promise(
       (resolve, reject) => {
@@ -42,7 +43,7 @@ export async function parsePDF(
           let prevheadY = 0;
           let parsedJson: CleanData[] = [];
           let lastTextSize = 0;
-          let content: { metadata: string[]; text: string } = {
+          let content: CleanData = {
             metadata: [],
             text: "",
           };
@@ -97,7 +98,22 @@ export async function parsePDF(
           }
           parsedJson = parsedJson.filter((item) => item.text.trim().length > 0);
           parsedJson = cleanData(parsedJson);
-          resolve({ filename, data: parsedJson });
+          content={metadata: [], text: ""}
+          const filtered = parsedJson.reduce((acc:CleanData[], item,index) => {
+            const currentWordCount = content.text.split(" ").length;
+            if (currentWordCount > ThressholdWordCount) {
+              acc.push(content);
+              content=item
+              return acc
+            }
+            content.text += item.text + " ";
+            content.metadata=Array.from(new Set([...content.metadata,...item.metadata]));
+            if(index+1>=parsedJson.length){
+              acc.push(content)
+            }
+            return acc
+          },[]);
+          resolve({ filename, data: filtered });
         });
       }
     );
