@@ -15,11 +15,32 @@ export const pcInbox = new Pinecone({
   apiKey: process.env.PINECONE_INBOX_API_KEY as string,
 });
 
-export const inboxConfig=new Map([
-  ['gmail',({indexName:process.env.PINECONE_GMAIL_INDEX_NAME as string,namespace:process.env.PINECONE_GMAIL_NAMESPACE ,threadID:"663657d1e96fbf822661f17e"})],
-  ['hotmail',({indexName:process.env.PINECONE_HOTMAIL_INDEX_NAME as string,namespace:process.env.PINECONE_HOTMAIL_NAMESPACE ,threadID:"663657d1e96fbf822661f17f"})],
-  ['zoho',({indexName:process.env.PINECONE_ZOHO_INDEX_NAME as string,namespace:process.env.PINECONE_ZOHO_NAMESPACE ,threadID:"66326e94b1c1156c4c78992b"})],
-])
+export const inboxConfig = new Map([
+  [
+    "gmail",
+    {
+      indexName: process.env.PINECONE_GMAIL_INDEX_NAME as string,
+      namespace: process.env.PINECONE_GMAIL_NAMESPACE,
+      threadID: "663657d1e96fbf822661f17e",
+    },
+  ],
+  [
+    "hotmail",
+    {
+      indexName: process.env.PINECONE_HOTMAIL_INDEX_NAME as string,
+      namespace: process.env.PINECONE_HOTMAIL_NAMESPACE,
+      threadID: "663657d1e96fbf822661f17f",
+    },
+  ],
+  [
+    "zoho",
+    {
+      indexName: process.env.PINECONE_ZOHO_INDEX_NAME as string,
+      namespace: process.env.PINECONE_ZOHO_NAMESPACE,
+      threadID: "66326e94b1c1156c4c78992b",
+    },
+  ],
+]);
 export const config = {
   similarityQuery: {
     // Top results limit
@@ -43,7 +64,10 @@ export function delay(t: number): Promise<void> {
   });
 }
 
-export async function upsertData(dataToEmbed: EmbeddingData[],indexName:string) {
+export async function upsertData(
+  dataToEmbed: EmbeddingData[],
+  indexName: string
+) {
   try {
     let step = 1;
     const cutOffIndex = 15;
@@ -60,7 +84,9 @@ export async function upsertData(dataToEmbed: EmbeddingData[],indexName:string) 
               input: `${item.keywords.join("|")}-\n${item.textToEmbed}`,
             });
             // 12. Define index name and unique ID for each embedding
-            const id = `${indexName.slice(0,4)}-${config.embeddingID}-${item.id}`;
+            const id = `${indexName.slice(0, 4)}-${config.embeddingID}-${
+              item.id
+            }`;
             // 13. Upsert embedding into Pinecone with new metadata
             await pcRepo
               .index(indexName)
@@ -91,14 +117,14 @@ function getContent(item: string | number | boolean | string[]) {
   }
   return item;
 }
-export function isInbox(name:string){
-  return /gmail|hotmail|zoho/.test(name)
+export function isInbox(name: string) {
+  return /gmail|hotmail|zoho/.test(name);
 }
 export async function queryGPT(
   messages: ChatCompletionMessageParam[],
   query: string,
   topK: number,
-  indexName:string
+  indexName: string
 ) {
   // 16. Create query embedding using OpenAI
   const queryEmbedding = await openai.embeddings.create({
@@ -106,10 +132,14 @@ export async function queryGPT(
     input: query,
   });
   // 17. Perform the query
-  const pc=isInbox(indexName)?pcInbox:pcRepo
-  const index=isInbox(indexName)?inboxConfig.get(indexName)?.indexName:indexName
-  const namespace=isInbox(indexName)?inboxConfig.get(indexName)?.namespace:config.namespace
-  const queryResult = await pc
+  const pc = isInbox(indexName) ? pcInbox : pcRepo;
+  const index = isInbox(indexName)
+    ? inboxConfig.get(indexName)?.indexName
+    : indexName;
+  const namespace = isInbox(indexName)
+    ? inboxConfig.get(indexName)?.namespace
+    : config.namespace;
+  let queryResult = await pc
     .index(index as string)
     .namespace(namespace as string)
     .query({
@@ -117,57 +147,104 @@ export async function queryGPT(
       topK: topK,
       vector: queryEmbedding.data[0].embedding,
     });
-  const content = queryResult.matches
-    .map((item) => {
-      return (
-        Object.entries(item.metadata as object).reduce((acc, [key, item]) => {
-          return acc + `\n${key}:${getContent(item)}`;
-        }, "") + "\n"
-      );
-    }) 
-    .join("---");
-  const prompt = `
+  let count=1
+  let data=queryResult.matches
+  while (queryResult.matches.length !== 0) {
+    try {
+      const content = queryResult.matches
+        .map((item) => {
+          return (
+            Object.entries(item.metadata as object).reduce(
+              (acc, [key, item]) => {
+                return acc + `\n${key}:${getContent(item)}`;
+              },
+              ""
+            ) + "\n"
+          );
+        })
+        .join("---");
+      const prompt = `
   hello please answer the question from the given context below in the following Context Section. answer the question using only that information make it more human like with your creativity. If you are unsure and the answer is not written in the Context try to answer withthe previous messages otherwise say Apolgies appropiately but don't make it too long and Please do not write URLs that you cannot find in the context section
 
   Context Section:
   ${content}
-
+  
   Question:
   """
   ${query}
   """
   `;
+      const stream = await openai.chat.completions.create({
+        model: process.env.MODEL as string,
+        messages: [
+          ...messages,
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        stream: true,
+        temperature: 0.5,
+      });
+      // 18. Log query results
+    
+      return {
+        stream,
+        responses: data.map((item) => ({
+          text:
+            Object.entries(item.metadata as object).reduce(
+              (acc, [key, item]) => {
+                return acc + `${key}:${getContent(item)}\n`;
+              },
+              ""
+            ) + "\n",
+          score: item.score as number,
+        })),
+      };
+    } catch (error) {
+      queryResult.matches = queryResult.matches.slice(
+        0,
+        queryResult.matches.length - 2
+      );
+      
+    }
+  }
   const stream = await openai.chat.completions.create({
     model: process.env.MODEL as string,
     messages: [
       ...messages,
       {
         role: "user",
-        content: prompt,
+        content: "answer only that you can't properly answer that question",
       },
     ],
     stream: true,
     temperature: 0.5,
   });
-  // 18. Log query results
   return {
     stream,
-    responses: queryResult.matches.map((item) => ({
+    responses: data.map((item) => ({
       text:
-        Object.entries(item.metadata as object).reduce((acc, [key, item]) => {
-          return acc + `${key}:${getContent(item)}\n`;
-        }, "") + "\n",
+        Object.entries(item.metadata as object).reduce(
+          (acc, [key, item]) => {
+            return acc + `${key}:${getContent(item)}\n`;
+          },
+          ""
+        ) + "\n",
       score: item.score as number,
     })),
   };
 }
 
-export async function createDocIndex(indexName: string,safetyCheck:boolean=false) {
-  if (safetyCheck ) {
+export async function createDocIndex(
+  indexName: string,
+  safetyCheck: boolean = false
+) {
+  if (safetyCheck) {
     let indexExists = (await pcRepo.listIndexes()).indexes?.some(
       (index) => index.name === indexName
     );
-    if (indexExists) return
+    if (indexExists) return;
     // console.log("index already exists");
     return;
   }
@@ -179,12 +256,15 @@ export async function createDocIndex(indexName: string,safetyCheck:boolean=false
   });
   console.log("index created");
 }
-export async function deleteDocIndex(indexName: string,safetyCheck:boolean=false) {
+export async function deleteDocIndex(
+  indexName: string,
+  safetyCheck: boolean = false
+) {
   if (safetyCheck) {
     let indexExists = (await pcRepo.listIndexes()).indexes?.some(
       (index) => index.name === indexName
     );
-    if(!indexExists) return;
+    if (!indexExists) return;
   }
   await pcRepo.deleteIndex(indexName);
   console.log("index deleted");
