@@ -10,7 +10,6 @@ export async function DELETE(request:NextRequest) {
                 }
             }
         })
-        console.log(data)
         return NextResponse.json({messages:"messages upserted"},{status:200})
     } catch (error) {
         console.log(error)

@@ -147,11 +147,9 @@ export default function Sidebar({
                           openConfirmBox(repo.heading, repo.id);
                         }}
                       >
-                        {/* <ConfirmationBox itemName={repo.heading}> */}
                         <button className="cursor-pointer text-red-500 flex items-center gap-2 font-semibold hover:!text-red-500">
                           <Trash2 size={18} /> Delete
                         </button>
-                        {/* </ConfirmationBox> */}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
