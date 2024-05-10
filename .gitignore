@@ -18,7 +18,9 @@
 # misc
 .DS_Store
 *.pem
-
+app/api/test/
+apprunner.yml
+data/
 # debug
 npm-debug.log*
 yarn-debug.log*
