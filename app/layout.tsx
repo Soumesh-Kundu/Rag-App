@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Wrapper from "@/components/Wrapper";
 import Sidebar from "@/components/Sidebar";
-export const dynamic = 'force-dynamic'
 const inter = Inter({ subsets: ["latin"]  });
 
 export const metadata: Metadata = {
