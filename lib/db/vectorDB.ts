@@ -7,7 +7,7 @@ import {
   ServerlessSpecCloudEnum,
 } from "@pinecone-database/pinecone/dist/pinecone-generated-ts-fetch";
 
-const openai = new OpenAI({});
+const openai = new OpenAI({apiKey:process.env.OPENAI_API_KEY});
 export const pcRepo = new Pinecone({
   apiKey: process.env.PINECONE_REPO_API_KEY as string,
 });
