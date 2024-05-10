@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { parsePDF } from "@/lib/scrapper/pdfScrapper";
 import { extractKeyword } from "@/lib/scrapper/dataCleaning";
-import { writeFileSync } from "fs-extra";
 import {
   createDocIndex,
   upsertData,
@@ -31,7 +30,6 @@ export async function POST(request: NextRequest) {
       extractedFiles.map(({ filename, buffer }) => parsePDF(filename, buffer))
     );
     let data = parsedData.flatMap((doc) => extractKeyword(doc));
-    // writeFileSync("./data/data.json", JSON.stringify(data));
     await createDocIndex(indexName,true);
     await upsertData(data, indexName);
     revalidatePath("/");
