@@ -129,11 +129,11 @@ export default function Sidebar({
                     }`}
                   >
                     <CollapsibleTrigger
-                      onClick={() => setCurrentTab(repo.id)}
+                   
                       asChild
                     >
                       <Tooltip>
-                        <TooltipTrigger asChild>
+                        <TooltipTrigger  onClick={() => setCurrentTab(repo.id)} asChild>
                           <Link
                             href={`/${repo.id}/query`}
                             replace={pathname === "/"}

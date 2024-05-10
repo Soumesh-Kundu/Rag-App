@@ -42,7 +42,7 @@ export default function ChatSection() {
   const [isHover, setIsHover] = useState<boolean>(false);
   const [isPending, setPending] = useState<boolean>(false);
   const [isStreamFinished, setStreamFinished] = useState<boolean>(true);
-  const [isAutoSaveOn, setAutoSaveOn] = useState<boolean>(true);
+  const [isAutoSaveOn, setAutoSaveOn] = useState<boolean>(false);
   const transformedMessages = useMemo(() => {
     return insertDataIntoMessages(messages, data, isAutoSaveOn);
   }, [messages, data]);

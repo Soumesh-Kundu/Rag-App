@@ -147,7 +147,7 @@ export async function queryGPT(
       topK: topK,
       vector: queryEmbedding.data[0].embedding,
     });
-  let count=1
+  let errorCount=1
   let data=queryResult.matches
   while (queryResult.matches.length !== 0) {
     try {
@@ -202,9 +202,10 @@ export async function queryGPT(
         })),
       };
     } catch (error) {
+      console.log("error comes: ",errorCount++)
       queryResult.matches = queryResult.matches.slice(
         0,
-        queryResult.matches.length - 2
+        queryResult.matches.length - (Math.floor(errorCount/2)+2)
       );
       
     }
