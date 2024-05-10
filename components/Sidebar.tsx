@@ -119,7 +119,7 @@ export default function Sidebar({
               <h2 className="font-bold text-xl 2xl:text-2xl">Repositories</h2>
             </div>
             <ul className="flex flex-col gap-2 w-full whitespace-nowrap pl-2">
-              {threads.map((repo) => (
+              {threads?.map((repo) => (
                 <Collapsible key={repo.id} open={currentTab === repo.id}>
                   <li
                     key={repo.id}

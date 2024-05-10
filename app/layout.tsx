@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 async function getThreads() {
   try {
-    const res = await fetch("http://localhost:3000/api/threads/get", {
+    const res = await fetch(`${process.env.BACKEND_URL}/api/threads/get`, {
       cache: "no-cache",
     });
     const data = await res.json();

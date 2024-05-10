@@ -2,7 +2,7 @@ import ViewSection from "@/components/view-section";
 export const dynamic='force-dynamic'
 async function getAllMessages(threadId:String) {
   try {
-    const res = await fetch(`http://localhost:3000/api/messages/${threadId}/get`,{
+    const res = await fetch(`${process.env.BACKEND_URL}/api/messages/${threadId}/get`,{
       cache:'no-store',
     });
     if(!res.ok) return []
