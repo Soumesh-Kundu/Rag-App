@@ -14,7 +14,7 @@ async function getThreads() {
   try {
     const url=`${process.env.BACKEND_URL}/api/threads/get`
     const res = await fetch(url,{
-      cache:'no-store'
+      cache:'no-cache'
     });
     const data = await res.json();
     return data;
