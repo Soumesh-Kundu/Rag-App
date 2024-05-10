@@ -36,7 +36,7 @@ export default async function RootLayout({
       <body
         className={`gap-5 flex background-gradient items-start min-h-screen w-full scrollbar ${inter.className}`}
       >
-        <Wrapper Sidebar={<Sidebar threads={threads} />}>{children}</Wrapper>
+        <Wrapper Sidebar={<Sidebar threads={threads ?? []} />}>{children}</Wrapper>
       </body>
     </html>
   );
