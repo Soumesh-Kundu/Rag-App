@@ -65,7 +65,7 @@ export default function Sidebar({
   const pathname = usePathname();
   useEffect(() => {
     setRepos([
-      ...threads.map((repo) => ({ id: repo.id, name: repo.heading })),
+      ...threads?.map((repo) => ({ id: repo.id, name: repo.heading })),
       ...inboxes,
     ]);
   }, []);
