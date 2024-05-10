@@ -3,8 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Wrapper from "@/components/Wrapper";
 import Sidebar from "@/components/Sidebar";
-
-const inter = Inter({ subsets: ["latin"] });
+export const dynamic = 'force-dynamic'
+const inter = Inter({ subsets: ["latin"]  });
 
 export const metadata: Metadata = {
   title: "Rag app",
@@ -12,8 +12,9 @@ export const metadata: Metadata = {
 };
 async function getThreads() {
   try {
-    const res = await fetch(`${process.env.BACKEND_URL}/api/threads/get`, {
-      cache: "no-cache",
+    const url=`${process.env.BACKEND_URL}/api/threads/get`
+    const res = await fetch(url,{
+      cache:'no-store'
     });
     const data = await res.json();
     return data;
