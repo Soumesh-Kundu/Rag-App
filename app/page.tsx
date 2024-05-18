@@ -1,7 +1,12 @@
-import ChatSection from "@/components/chat-section";
 import { Folders } from "lucide-react";
+import { cookies } from "next/headers";
+import { permanentRedirect } from "next/navigation";
 export default async function Home() {
-  return (
+  const cookieStore=cookies()
+  if(cookieStore.get('authToken')===undefined){
+    permanentRedirect('/login')
+  }
+ return (
     <main className="w-full grid place-items-center">
       <div className="space-y-4 max-w-7xl w-full scrollbar px-2 lg:px-0 grid place-items-center">
         <div className=" w-1/3 lg:w-5/12 rounded-xl bg-white p-4 shadow-xl pb-0">

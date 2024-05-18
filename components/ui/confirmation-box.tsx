@@ -6,7 +6,7 @@ type ConfirmationBoxProps = {
   itemName: string;
   status: "open" | "closed" | string;
   id: string;
-  onConfirm: (id: string) => Promise<{success:boolean}>;
+  onConfirm: (id: string) => Promise<{ success: boolean }>;
   onCancel: () => void;
 };
 
@@ -28,17 +28,24 @@ export default function ConfirmationBox({
   }, [status]);
 
   async function handleConfirm() {
-    if(isLoading) return;
+    if (isLoading) return;
     setIsLoading(true);
     setTimeout(() => {
       setIsHidden(true);
     }, 200);
     try {
-        const {success}=await onConfirm(id);
+      const { success } = await onConfirm(id);
+      if(!success) throw new Error("Something went wrong");
+      setIsHidden(false);
+      setTimeout(()=>{
+        BoxCloseRef.current?.click();
+      },50)
+      setIsLoading(false);
     } catch (error) {
-        console.log(error)
+      console.log(error);
+      BoxCloseRef.current?.click();
+      setIsLoading(false)
     }
-    BoxCloseRef.current?.click();
   }
   return (
     <Dialog
@@ -53,7 +60,8 @@ export default function ConfirmationBox({
       <DialogTrigger ref={BoxTriggerRef}></DialogTrigger>
       <DialogContent className="max-w-sm p-10 flex flex-col gap-8 items-center">
         <span className="w-[calc(100%-20px)] text-center">
-          Are you sure to delete <strong>{itemName.slice(0, 25)}</strong> and all its history and data ?
+          Are you sure to delete <strong>{itemName.slice(0, 25)}</strong> and
+          all its history and data ?
         </span>
         <div className="w-full flex items-center gap-3 justify-around">
           <Button

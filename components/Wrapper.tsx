@@ -1,10 +1,17 @@
 "use client";
+import { usePathname } from "next/navigation";
 import React, { useEffect, createContext, useState, useContext } from "react";
 // import { dotWave } from "ldrs";
 // dotWave.register()
 type Thread = {
   id: string;
+  userId?:string,
   name: string;
+  createdAt?:string;
+  shared_access?:{
+    userId:string,
+    role:"Editor"|"Commenter"|"Read-Only"
+  }
 };
 
 type ContextProps = {
@@ -15,6 +22,15 @@ const ThreadsContext = createContext<ContextProps>({
   threads: [],
   setRepos: (threads: Thread[]) => {},
 });
+const unAuthorizedRoutes=[
+  'login',
+  'signup',
+  'confirm-email',
+  'reset-password',
+  'forgot-password',
+  'callback',
+  'accept-invite'
+]
 export default function Wrapper({
   children,
   Sidebar,
@@ -23,9 +39,8 @@ export default function Wrapper({
   Sidebar: React.ReactNode;
 }) {
   const [threads, setThreads] = useState<Thread[]>([]);
+  const pathname=usePathname()
   function setRepos(repos: Thread[]) {
-    console.log(repos);
-    console.log("hello");
     setThreads(repos);
   }
   useEffect(() => {
@@ -39,7 +54,7 @@ export default function Wrapper({
   return (
     <>
       <ThreadsContext.Provider value={{ threads, setRepos }}>
-        {Sidebar}
+        {!new RegExp(unAuthorizedRoutes.join("|")).test(pathname) && Sidebar}
         <div className="gap-10 grid place-items-center w-full h-[100dvh] scrollbar">
           {children}
         </div>

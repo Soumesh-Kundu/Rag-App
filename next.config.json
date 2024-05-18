@@ -7,5 +7,13 @@
     },
     "serverComponentsExternalPackages": ["pdf2json"]
   },
-  "trailingSlash":true
+  "trailingSlash":true,
+  "images": {
+    "remotePatterns": [
+      {
+        "protocol": "https",
+        "hostname": "lh3.googleusercontent.com"
+      }
+    ]
+  }
 }

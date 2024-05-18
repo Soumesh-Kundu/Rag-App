@@ -3,7 +3,31 @@ import { Button } from "../button";
 import { Separator } from "../separator";
 import { Dialog, DialogContent, DialogTrigger } from "../dialog";
 
-export default function Comments({ comments }: { comments: string[] }) {
+const currentGetDate = new Date();
+export default function Comments({
+  comments,
+}: {
+  comments: { text: string; name: string; createdAt: string }[];
+}) {
+  function getFormattedDate(createdAt: string) {
+    const date = new Date(createdAt);
+    const diffDays = new Date().getDate() - date.getDate();
+    const diffMonths = new Date().getMonth() - date.getMonth();
+    const diffYears = new Date().getFullYear() - date.getFullYear();
+    if (diffDays === 0 && diffMonths === 0 && diffYears === 0) {
+      return "today";
+    }
+    if(diffDays===1 && diffMonths===0 && diffYears===0){
+      return "yesterday"
+    }
+    if(diffDays>1 && diffMonths===0 && diffYears===0){
+      return date.toDateString().split(" ")[0]+', ' + date.toDateString().split(" ").slice(1,3).join(" ")
+    }
+
+    if(diffYears>0){
+      return date.toDateString().split(" ")[0]+', ' + date.toDateString().split(" ").slice(1,4).join(" ")
+    }
+  }
   return (
     <Dialog>
       <DialogTrigger disabled={comments.length === 0} asChild>
@@ -22,12 +46,16 @@ export default function Comments({ comments }: { comments: string[] }) {
             <>
               <div className=" divide-y divide-gray-200 list-disc  flex flex-col items-center">
                 <div className="flex items-start w-full gap-3">
-                  <div className="h-8 w-8 flex items-center justify-center border-2 rounded-lg">
+                  <div className="h-8 w-8 flex items-center justify-center border-2 rounded-lg mt-3">
                     <User2 size={16} />
                   </div>
-                  <span className="text-gray-900 font-medium  break-words max-w-md">
-                    {item}
-                  </span>
+                  <div className="text-gray-900 font-medium  break-words max-w-md">
+                    <div>
+                      <span className="font-bold">{item.name}</span>
+                      <span className="text-gray-500 ml-2">• {getFormattedDate(item.createdAt)}</span>
+                    </div>
+                    <p>{item.text}</p>
+                  </div>
                 </div>
                 {index + 1 !== comments.length && (
                   <Separator className="w-11/12 my-3" />

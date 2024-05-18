@@ -6,34 +6,36 @@ import { Popover, PopoverContent, PopoverTrigger } from '../popover'
 import { Textarea } from '../textarea'
 import { useRouter } from 'next/navigation'
 import { PopoverClose } from '@radix-ui/react-popover'
+import { app } from '@/lib/db/realm'
 
-export default function Addnote({id}:{id:string}) {
-  const router=useRouter()
+export default function Addnote({id,refreshMessages}:{id:string,refreshMessages:()=>void}) {
   const closeButtonRef=useRef<HTMLButtonElement>(null)
   const [comment,setComment]=useState<string>("")
   const [isLoading,setLoading]=useState<boolean>(false)
   async function addComment(){
     if(isLoading) return
+    const collection=app.currentUser?.mongoClient('mongodb-atlas').db('private-gpt').collection('messages')
     try {
       setLoading(true)
-      const res=await fetch('/api/messages/comment/add',{
-        method:"POST",
-        body:JSON.stringify({
-          comment,
-          id
-        })
+      await collection?.updateOne({
+        _id:{$oid:id}
+      },{
+        $push:{
+          comments:{
+            text:comment,
+            name:app.currentUser?.customData?.name,
+            createdAt:new Date().toISOString()
+          }
+        }
       })
-      if(res.ok){
         closeButtonRef?.current?.click()
+        refreshMessages()
         setComment("")
-        router.refresh()
-        setLoading(false)
         console.log('done')
-      }
     } catch (error) {
-      setLoading(false)
       console.log(error)
     }
+    setLoading(false)
   }
   return (
     <Popover  >

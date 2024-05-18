@@ -72,21 +72,18 @@ function ViewMessageData({
 type ChatMessageProps = {
   chatMessage: MessageBody;
   messageIndex:number,
-  deleteMessage:(index:number)=>Promise<Response>
+  deleteMessage:(index:number)=>Promise<void>
+  refreshMessages:()=>void,
+  currentUserRole:"Editor" | "Commenter" | "Read-Only" | "Admin"
 };
 
-export default function ViewMessage({ chatMessage,messageIndex,deleteMessage }: ChatMessageProps) {
+export default function ViewMessage({currentUserRole, chatMessage,messageIndex,deleteMessage,refreshMessages }: ChatMessageProps) {
   const [isLoading,setLoading]=useState<boolean>(false)
-  const router=useRouter()
   async function handleClick(){
     if(isLoading) return
     setLoading(true)
     try {
-      const res=await deleteMessage(messageIndex)
-      console.log(res)
-      if(res.ok){
-        router.refresh()
-      }
+      await deleteMessage(messageIndex)
     } catch (error) {
       console.log(error)
     }
@@ -113,11 +110,11 @@ export default function ViewMessage({ chatMessage,messageIndex,deleteMessage }: 
         {chatMessage.role.toLowerCase() !== "user" && (
           <div className="flex items-center gap-2.5 ">
             <Comments comments={chatMessage.comments} />
-            <Addnote id={chatMessage.id} />
-            <Button onClick={handleClick} variant="outline" size="icon">
+            <Addnote id={chatMessage.id} refreshMessages={refreshMessages}/>
+            {currentUserRole!=="Commenter" && <Button onClick={handleClick} variant="outline" size="icon">
               {isLoading ? <l-ring size={18} color="red" stroke={1.2}></l-ring>:
               <Trash2 size={18} color="red" />}
-            </Button>
+            </Button>}
           </div>
         )}
       </div>

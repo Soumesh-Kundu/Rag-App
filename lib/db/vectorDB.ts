@@ -6,8 +6,9 @@ import {
   CreateIndexRequestMetricEnum,
   ServerlessSpecCloudEnum,
 } from "@pinecone-database/pinecone/dist/pinecone-generated-ts-fetch";
+import { inboxConfig } from "../utils";
 
-const openai = new OpenAI({apiKey:process.env.OPENAI_API_KEY as string});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY as string });
 export const pcRepo = new Pinecone({
   apiKey: process.env.PINECONE_REPO_API_KEY as string,
 });
@@ -15,32 +16,6 @@ export const pcInbox = new Pinecone({
   apiKey: process.env.PINECONE_INBOX_API_KEY as string,
 });
 
-export const inboxConfig = new Map([
-  [
-    "gmail",
-    {
-      indexName: process.env.PINECONE_GMAIL_INDEX_NAME as string,
-      namespace: process.env.PINECONE_GMAIL_NAMESPACE,
-      threadID: "663657d1e96fbf822661f17e",
-    },
-  ],
-  [
-    "hotmail",
-    {
-      indexName: process.env.PINECONE_HOTMAIL_INDEX_NAME as string,
-      namespace: process.env.PINECONE_HOTMAIL_NAMESPACE,
-      threadID: "663657d1e96fbf822661f17f",
-    },
-  ],
-  [
-    "zoho",
-    {
-      indexName: process.env.PINECONE_ZOHO_INDEX_NAME as string,
-      namespace: process.env.PINECONE_ZOHO_NAMESPACE,
-      threadID: "66326e94b1c1156c4c78992b",
-    },
-  ],
-]);
 export const config = {
   similarityQuery: {
     // Top results limit
@@ -66,7 +41,7 @@ export function delay(t: number): Promise<void> {
 
 export async function upsertData(
   dataToEmbed: EmbeddingData[],
-  indexName: string
+  namespace: string
 ) {
   try {
     let step = 1;
@@ -84,13 +59,13 @@ export async function upsertData(
               input: `${item.keywords.join("|")}-\n${item.textToEmbed}`,
             });
             // 12. Define index name and unique ID for each embedding
-            const id = `${indexName.slice(0, 4)}-${config.embeddingID}-${
+            const id = `${config.indexName.slice(0, 4)}-${config.embeddingID}-${
               item.id
             }`;
             // 13. Upsert embedding into Pinecone with new metadata
             await pcRepo
-              .index(indexName)
-              .namespace(config.namespace)
+              .index(config.indexName)
+              .namespace(namespace)
               .upsert([
                 {
                   id: id,
@@ -124,7 +99,7 @@ export async function queryGPT(
   messages: ChatCompletionMessageParam[],
   query: string,
   topK: number,
-  indexName: string
+  nameSpace: string
 ) {
   // 16. Create query embedding using OpenAI
   const queryEmbedding = await openai.embeddings.create({
@@ -132,13 +107,13 @@ export async function queryGPT(
     input: query,
   });
   // 17. Perform the query
-  const pc = isInbox(indexName) ? pcInbox : pcRepo;
-  const index = isInbox(indexName)
-    ? inboxConfig.get(indexName)?.indexName
-    : indexName;
-  const namespace = isInbox(indexName)
-    ? inboxConfig.get(indexName)?.namespace
-    : config.namespace;
+  const pc = isInbox(nameSpace) ? pcInbox : pcRepo;
+  const index = isInbox(nameSpace)
+    ? inboxConfig.get(nameSpace)?.indexName
+    : config.indexName;
+  const namespace = isInbox(nameSpace)
+    ? inboxConfig.get(nameSpace)?.namespace
+    : nameSpace;
   let queryResult = await pc
     .index(index as string)
     .namespace(namespace as string)
@@ -147,8 +122,8 @@ export async function queryGPT(
       topK: topK,
       vector: queryEmbedding.data[0].embedding,
     });
-  let errorCount=1
-  let data=queryResult.matches
+  let errorCount = 1;
+  let data = queryResult.matches;
   while (queryResult.matches.length !== 0) {
     try {
       const content = queryResult.matches
@@ -187,7 +162,7 @@ export async function queryGPT(
         temperature: 0.5,
       });
       // 18. Log query results
-    
+
       return {
         stream,
         responses: data.map((item) => ({
@@ -202,12 +177,11 @@ export async function queryGPT(
         })),
       };
     } catch (error) {
-      console.log("error comes: ",errorCount++)
+      console.log("error comes: ", errorCount++);
       queryResult.matches = queryResult.matches.slice(
         0,
-        queryResult.matches.length - (Math.floor(errorCount/2)+2)
+        queryResult.matches.length - (Math.floor(errorCount / 2) + 2)
       );
-      
     }
   }
   const stream = await openai.chat.completions.create({
@@ -226,12 +200,9 @@ export async function queryGPT(
     stream,
     responses: data.map((item) => ({
       text:
-        Object.entries(item.metadata as object).reduce(
-          (acc, [key, item]) => {
-            return acc + `${key}:${getContent(item)}\n`;
-          },
-          ""
-        ) + "\n",
+        Object.entries(item.metadata as object).reduce((acc, [key, item]) => {
+          return acc + `${key}:${getContent(item)}\n`;
+        }, "") + "\n",
       score: item.score as number,
     })),
   };
@@ -243,14 +214,16 @@ export async function createDocIndex(
 ) {
   if (safetyCheck) {
     let indexExists = (await pcRepo.listIndexes()).indexes?.some(
-      (index) => index.name === indexName
+      (index) => index.name === config.indexName
     );
-    if (indexExists) return;
-    // console.log("index already exists");
-    return;
+    if (indexExists) {
+      console.log("index already exists");
+      return;
+    }
   }
+  console.log("index already not exists");
   await pcRepo.createIndex({
-    name: indexName,
+    name: config.indexName,
     dimension: config.dimension,
     metric: config.metric,
     spec: { serverless: { cloud: config.cloud, region: config.region } },
@@ -263,10 +236,10 @@ export async function deleteDocIndex(
 ) {
   if (safetyCheck) {
     let indexExists = (await pcRepo.listIndexes()).indexes?.some(
-      (index) => index.name === indexName
+      (index) => index.name === config.indexName
     );
     if (!indexExists) return;
   }
-  await pcRepo.deleteIndex(indexName);
+  await pcRepo.deleteIndex(config.indexName);
   console.log("index deleted");
 }

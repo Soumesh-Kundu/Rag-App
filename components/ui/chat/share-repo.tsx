@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "../dialog";
 import { Button } from "../button";
 import { Input } from "../input";
@@ -13,42 +13,67 @@ import { Label } from "../label";
 import Loader from "@/components/Loader";
 import { useThreads } from "@/components/Wrapper";
 import { useParams } from "next/navigation";
+import { app } from "@/lib/db/realm";
+import { sendInvite } from "@/app/_action";
 
 type Props = {
+  Role:"Admin"|"Editor"|"Commenter"|"Read-Only",
   children: React.ReactNode;
 };
-const SelctItems = [
-  { name: "Creator", description: "Can fully Configure and edit the repo" },
+const RoleRanks={
+  "Admin":0,
+  "Editor":0,
+  "Read-Only":1,
+  "Commenter":2,
+}
+const SelectItems = [
   {
     name: "Editor",
     description: "Can edit history and files but cannot edit this Repo",
   },
-  { name: "Commenter", description: "Can comment on history responses" },
-  { name: "Read Only", description: "Cannot edit or comment" },
+  { name: "Read Only", description: "Cannot edits files but can chat" },
+  { name: "Commenter", description: "Can comment on history responses " },
 ];
-export default function ShareRepo({ children }: Props) {
+export default function ShareRepo({ Role,children }: Props) {
   const [data, setData] = useState({ email: "", description: "" });
-  const [accessType, setAccessType] = useState("Creator");
+  const [accessType, setAccessType] = useState("");
   const [isLoading, setLoading] = useState(false);
+  const [repoName,setRepoName]=useState("")
   const [isSent, setIsSent] = useState(false);
   const { threads } = useThreads();
   const params = useParams();
-
+  useEffect(()=>{
+    setAccessType(SelectItems[RoleRanks[Role]]?.name ?? "Editor");
+  },[Role])
+  useEffect(()=>{
+    setRepoName(threads?.find(
+      (item) => item.id === params.id
+    )?.name as string)
+  },[params,threads])
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     setData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
-  function handleShareRepo(e: React.FormEvent<HTMLFormElement>) {
+  async function handleShareRepo(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (isLoading) return;
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await sendInvite({
+        email: data.email,
+        origin: window.location.origin,
+        role:accessType.split(" ").join("-"),
+        repoId: params.id as string,
+        repoName
+      })
       setIsSent(true);
       setLoading(false);
-    }, 2000);
+    } catch (error) {
+      console.log(error)
+    }
   }
   function reset() {
     setData({ email: "", description: "" });
-    setAccessType("Creator");
+    setAccessType(SelectItems[RoleRanks[Role]].name);
     setIsSent(false);
   }
   return (
@@ -71,9 +96,7 @@ export default function ShareRepo({ children }: Props) {
               <span>
                 <strong>
                   {
-                    threads?.find(
-                      (item) => item.id === params.id
-                    )?.name as React.ReactNode
+                    repoName
                   }
                 </strong>
               </span>
@@ -110,7 +133,7 @@ export default function ShareRepo({ children }: Props) {
                     <strong>{accessType}</strong>
                   </SelectTrigger>
                   <SelectContent>
-                    {SelctItems.map((item) => (
+                    {SelectItems.slice(RoleRanks[Role], SelectItems.length).map((item) => (
                       <SelectItem
                         key={item.name}
                         value={item.name}

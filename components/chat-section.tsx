@@ -11,10 +11,12 @@ import { useParams, useRouter } from "next/navigation";
 import { Switch } from "./ui/switch";
 import { ShareIcon, TrashIcon } from "@heroicons/react/24/solid";
 import ShareRepo from "./ui/chat/share-repo";
+import { useThreads } from "./Wrapper";
+import { app } from "@/lib/db/realm";
+import { inboxConfig } from "@/lib/utils";
 
-
-function isInbox(name:string){
-  return /gmail|hotmail|zoho/.test(name)
+function isInbox(name: string) {
+  return /gmail|hotmail|zoho/.test(name);
 }
 export default function ChatSection() {
   const {
@@ -43,6 +45,10 @@ export default function ChatSection() {
   const [isPending, setPending] = useState<boolean>(false);
   const [isStreamFinished, setStreamFinished] = useState<boolean>(true);
   const [isAutoSaveOn, setAutoSaveOn] = useState<boolean>(false);
+  const [currenUserRole, setCurrentUserRole] = useState<
+    "Editor" | "Commenter" | "Read-Only" | "Admin"
+  >("Admin");
+  const { threads } = useThreads();
   const transformedMessages = useMemo(() => {
     return insertDataIntoMessages(messages, data, isAutoSaveOn);
   }, [messages, data]);
@@ -62,27 +68,53 @@ export default function ChatSection() {
     }
   }
   async function uploadLastMessage() {
-    const lastMessages = transformedMessages.slice(-2);
-    console.log(lastMessages);
-    const message = lastMessages.map((item) => ({
-      role: item?.role.toUpperCase() as string,
-      content: item?.content,
-      createdAt: item?.createdAt,
-      data: (item?.data as { result: { score: number; text: string }[] })
-        ?.result,
-    }));
-    console.log(message);
-    const res = await fetch("/api/messages/add", {
-      method: "POST",
-      body: JSON.stringify({
-        messages: message,
-        threadID: params.id,
-      }),
-    });
-    if (res.ok) {
-      console.log("updated");
+    try {
+      const lastMessages = transformedMessages.slice(-2);
+      const mongo = app.currentUser
+        ?.mongoClient("mongodb-atlas")
+        .db("private-gpt")
+        .collection("messages");
+      const message = lastMessages.map((item) => ({
+        role: item?.role.toUpperCase() as string,
+        content: item?.content,
+        threadId: isInbox(params.id as string)
+          ? (inboxConfig.get(params.id as string)?.threadID as string)
+          : params.id,
+        createdAt: item?.createdAt?.toISOString(),
+        data: (item?.data as { result: { score: number; text: string }[] })
+          ?.result,
+        comment: [],
+      }));
+      const res = await fetch("/api/messages/add", {
+        method: "POST",
+        body: JSON.stringify({
+          messages: message,
+          threadID: params.id,
+        }),
+      });
+      const insertedItems = await mongo?.insertMany(message);
+      if (insertedItems?.insertedIds?.length ) {
+        console.log("updated");
+      }
+    } catch (error) {
+      console.log(error)
     }
   }
+  useEffect(() => {
+    const thread = threads?.find((item) => item.id === params.id);
+    console.log(thread);
+    if (thread?.userId === app.currentUser?.id || /gmail|hotmail|zoho/.test(params.id as string)) {
+      setCurrentUserRole("Admin");
+    } else {
+      console.log(
+        !isInbox(params.id as string),
+        /Admin|Editor/.test(currenUserRole)
+      );
+      setCurrentUserRole(
+        thread?.shared_access?.role as "Editor" | "Commenter" | "Read-Only"
+      );
+    }
+  }, [threads,params.id]);
   useEffect(() => {
     if (
       isAutoSaveOn &&
@@ -119,26 +151,34 @@ export default function ChatSection() {
           }}
         />
         <div className="flex items-center gap-3">
-          {!isInbox(params.id as string) && <NewChat />}
-          {!isInbox(params.id as string) && <Button
-            onClick={handleReset}
-            variant="destructive-rfull"
-            className={`flex items-center gap-2 justify-center  ${
-              isPending && "!bg-red-500"
-            }`}
-          >
-            {isPending ? (
-              <span className="px-2.5">
-                <l-dot-wave size={40} speed={1.6} color="white"></l-dot-wave>
-              </span>
-            ) : (
-              <>
-                <TrashIcon className="w-4 h-4" />
-                Reset
-              </>
+          {!isInbox(params.id as string) &&
+            /Admin|Editor/.test(currenUserRole) && <NewChat />}
+          {!isInbox(params.id as string) &&
+            /Admin|Editor/.test(currenUserRole) && (
+              <Button
+                onClick={handleReset}
+                variant="destructive-rfull"
+                className={`flex items-center gap-2 justify-center  ${
+                  isPending && "!bg-red-500"
+                }`}
+              >
+                {isPending ? (
+                  <span className="px-2.5">
+                    <l-dot-wave
+                      size={40}
+                      speed={1.6}
+                      color="white"
+                    ></l-dot-wave>
+                  </span>
+                ) : (
+                  <>
+                    <TrashIcon className="w-4 h-4" />
+                    Reset
+                  </>
+                )}
+              </Button>
             )}
-          </Button>}
-          <ShareRepo>
+          <ShareRepo Role={currenUserRole}>
             <Button
               onClick={() => {}}
               variant={"blue-rfull"}
@@ -149,8 +189,9 @@ export default function ChatSection() {
             </Button>
           </ShareRepo>
           <div
-            // variant="pale-rfull"
-            className={`${buttonVariants({variant:"pale-rfull"})} flex items-center gap-3 bg-white rounded-lg py-2 px-4`}
+            className={`${buttonVariants({
+              variant: "pale-rfull",
+            })} flex items-center gap-3 bg-white rounded-lg py-2 px-4`}
           >
             <Switch
               checked={isAutoSaveOn}

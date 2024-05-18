@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 import { fontFamily } from "tailwindcss/defaultTheme";
+import { UI_colors } from "./color.config";
 
 const config: Config = {
   darkMode: ["class"],
@@ -22,6 +23,9 @@ const config: Config = {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+        },
+        ui: {
+          ...UI_colors
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
