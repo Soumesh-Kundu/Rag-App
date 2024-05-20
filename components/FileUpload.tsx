@@ -88,9 +88,8 @@ export default function FileUpload() {
   }
 
   return (
-    // <div className="flex items-start justify-center h-screen">
     <div className="space-y-4 max-w-6xl w-full scrollbar px-2 lg:px-0 grid place-items-center">
-      <div className="w-1/3 rounded-xl bg-white p-4 shadow-xl ">
+      <div className="w-[calc(100%-20px)] sm:w-2/3 md:w-1/3 rounded-xl bg-white p-4 shadow-xl ">
           <form
             className={`${
               dragActive ? "bg-blue-400" : "bg-gray-100"

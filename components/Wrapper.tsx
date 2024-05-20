@@ -55,7 +55,7 @@ export default function Wrapper({
     <>
       <ThreadsContext.Provider value={{ threads, setRepos }}>
         {!new RegExp(unAuthorizedRoutes.join("|")).test(pathname) && Sidebar}
-        <div className="gap-10 grid place-items-center w-full h-[100dvh] scrollbar">
+        <div className="gap-10 grid place-items-center w-full h-screen overflow-hidden  scrollbar">
           {children}
         </div>
       </ThreadsContext.Provider>

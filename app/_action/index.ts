@@ -4,7 +4,7 @@ import { serverUser as server_user } from "@/lib/db/realm";
 import { sign } from "jsonwebtoken";
 import { sendMail } from "@/lib/db/mailer";
 import { cookies, headers } from "next/headers";
-import { pcRepo } from "@/lib/db/vectorDB";
+import { config, pcRepo } from "@/lib/db/vectorDB";
 type InviteBody = {
   email: string;
   origin: string;
@@ -76,6 +76,17 @@ export async function removeCookie(){
 }
 
 export async function deleteNameSpace(repoId:string){
-  await pcRepo.index('ns1').namespace(repoId).deleteAll()
-  console.log(repoId + " namespace deleted")
+  try {
+    
+    const index=pcRepo.index(config.indexName)
+    const indexStats=await index.describeIndexStats()
+    if(indexStats?.namespaces !== undefined  &&  indexStats?.namespaces[repoId]?.recordCount>0){
+      await index.namespace(repoId).deleteAll()
+      console.log(repoId + " namespace deleted")
+      return
+    }
+    console.log("namspace not existed")
+  } catch (error) {
+    console.log(error)
+  }
 }

@@ -5,10 +5,10 @@ import {FolderPlusIcon} from "@heroicons/react/24/solid";
 export default function NewChat() {
   const params = useParams();
   return (
-    <div className="w-full flex justify-end gap-4">
+    <div className="w-full flex justify-center gap-4">
       <Link
         href={`/${params.id}/add`}
-        className={`${buttonVariants({ variant: "primary-rfull" })} gap-2`}
+        className={`${buttonVariants({ variant: "primary-rfull" })} gap-2 w-full`}
       >
         <FolderPlusIcon className="w-4 h-4" />
         Add files

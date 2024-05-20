@@ -1,10 +1,15 @@
-import type { Config } from "tailwindcss";
+import type { Config } from "tailwindcss"
 import { fontFamily } from "tailwindcss/defaultTheme";
 import { UI_colors } from "./color.config";
-
-const config: Config = {
+const config = {
   darkMode: ["class"],
-  content: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}"],
+  content: [
+    './pages/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+    './app/**/*.{ts,tsx}',
+    './src/**/*.{ts,tsx}',
+  ],
+  prefix: "",
   theme: {
     container: {
       center: true,
@@ -77,6 +82,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
-};
-export default config;
+  plugins: [require("tailwindcss-animate")],
+} satisfies Config
+
+export default config

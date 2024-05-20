@@ -12,6 +12,7 @@ import {
   ChevronDownIcon,
   DoorOpen,
   LogOut,
+  Menu,
 } from "lucide-react";
 // import {ObjectId} from 'bson'
 import Image from "next/image";
@@ -41,13 +42,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { app } from "@/lib/db/realm";
 import { deleteNameSpace, removeCookie } from "@/app/_action";
 import { Skeleton } from "./ui/skeleton";
-
-const repos = [
-  { id: 564641, name: "Repo 1", description: "Description of Repo 1" },
-  { id: 445642, name: "Repo 2", description: "Description of Repo 2" },
-  { id: 312133, name: "Repo 3", description: "Description of Repo 3" },
-];
-
+import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 const inboxes = [
   { id: "gmail", name: "Gmail", imgSrc: "/google.png" },
   { id: "hotmail", name: "Outlook", imgSrc: "/outlook.webp" },
@@ -65,111 +60,44 @@ type RepoType = {
     role: "Editor" | "Commenter" | "Read-Only";
   };
 };
+type SideBarPropos={
+  ownRepos: {
+    repos: RepoType[];
+    isLoaded: boolean;
+  },
+  getOwnThreads: () => Promise<void>,
+  currentTab: string,
+  setCurrentTab: (id: string) => void,
+  sharedRepos: {
+    repos: RepoType[];
+    isLoaded: boolean;
+  },
+  getSharedThreads: () => Promise<void>,
+  userData:{
+    name:string,picture:string
+  }
 
-export default function Sidebar() {
+
+
+}
+
+export function SidebarComponent({ownRepos,getOwnThreads,currentTab,setCurrentTab,sharedRepos,userData}:SideBarPropos) {
   const addRepoRef = useRef<HTMLButtonElement>(null);
   const [addRepoName, setAddRepoName] = useState("");
-  const [currentTab, setCurrentTab] = useState("");
+
   const [isLoading, setLoading] = useState(false);
   const [isDropdownOpen, setDropdownOpen] = useState(false);
-  const [userData, setUsername] = useState({ name: "", picture: "" });
+
   const [boxData, setBoxData] = useState({
     itemName: "",
     status: "closed",
     id: "",
   });
-  const [ownRepos, setOwnRepos] = useState<{
-    repos: RepoType[];
-    isLoaded: boolean;
-  }>({ repos: [], isLoaded: false });
-  const [sharedRepos, setSharedRepos] = useState<{
-    repos: RepoType[];
-    isLoaded: boolean;
-  }>({ repos: [], isLoaded: false });
 
-  const { setRepos } = useThreads();
   const router = useRouter();
   const pathname = usePathname();
 
-  useEffect(() => {
-    setUsername({
-      name: app.currentUser?.customData.name as string,
-      picture: app.currentUser?.customData.picture as string,
-    });
-    getOwnThreads();
-    getSharedThreads();
-  }, []);
-
-  useEffect(() => {
-    setRepos([
-      ...ownRepos.repos,
-      ...sharedRepos.repos,
-      ...inboxes.map((inbox) => ({ id: inbox.id, name: inbox.name })),
-    ]);
-  }, [ownRepos, sharedRepos]);
-  useEffect(() => {
-    console.log("hello");
-    if (ownRepos.isLoaded && ownRepos.repos.length > 0) {
-      const id = ownRepos.repos[0].id;
-      setCurrentTab(id);
-      router.push(`/${id}/query`);
-    }
-    if (sharedRepos.isLoaded && sharedRepos.repos.length > 0) {
-      const id = sharedRepos.repos[0].id;
-      setCurrentTab(id);
-      if (sharedRepos.repos[0]?.shared_access.role === "Commenter") {
-        router.push(`/${id}/history`);
-      } else {
-        router.push(`/${id}/query`);
-      }
-    }
-  }, [ownRepos.isLoaded, sharedRepos.isLoaded]);
-  async function getOwnThreads() {
-    const mongo = app?.currentUser
-      ?.mongoClient("mongodb-atlas")
-      .db("private-gpt");
-    const repos = (await mongo?.collection("threads").find(
-      { userId: app.currentUser?.id },
-      {
-        projection: {
-          id: { $toString: "$_id" },
-          name: 1,
-          createdAt: 1,
-          userId: 1,
-        },
-      }
-    )) as RepoType[];
-    setOwnRepos({ repos, isLoaded: true });
-  }
-  async function getSharedThreads() {
-    const mongo = app?.currentUser
-      ?.mongoClient("mongodb-atlas")
-      .db("private-gpt");
-    const repos = (await mongo?.collection("threads").aggregate([
-      {
-        $match: {
-          shared_access: { $elemMatch: { userId: app?.currentUser?.id } },
-        },
-      },
-      {
-        $project: {
-          id: { $toString: "$_id" },
-          name: 1,
-          createdAt: 1,
-          userId: 1,
-          shared_access: {
-            $filter: {
-              input: "$shared_access",
-              as: "access",
-              cond: { $eq: ["$$access.userId", app?.currentUser?.id] },
-            },
-          },
-        },
-      },
-      { $unwind: "$shared_access" },
-    ])) as RepoType[];
-    setSharedRepos({ repos, isLoaded: true });
-  }
+  
   async function createRepo(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (isLoading) return;
@@ -221,7 +149,7 @@ export default function Sidebar() {
   }
   return (
     <TooltipProvider>
-      <aside className="sidebar shadow-sm bg-white/40 text-sm 2xl:text-base pb-3  min-w-60 h-screen  scrollbar  flex flex-col">
+      <aside className="sidebar shadow-sm bg-white/40 text-sm 2xl:text-base pb-3  w-full h-screen scrollbar overflow-hidden flex flex-col">
         <nav className="flex flex-col gap-4  mb-5 scrollbar overflow-y-auto  flex-grow py-4 w-full">
           <div className="flex flex-col gap-4">
             <div className="px-6">
@@ -229,99 +157,97 @@ export default function Sidebar() {
             </div>
             {ownRepos.isLoaded ? (
               <>
-              {
-                ownRepos.repos.length>0?(
-              <ul className="flex flex-col gap-2 w-full whitespace-nowrap pl-2">
-                {ownRepos?.repos.map((repo) => (
-                  <Collapsible key={repo.id} open={currentTab === repo.id}>
-                    <li
-                      key={repo.id}
-                      className={`flex gap-3 items-center justify-between py-1 pl-4 pr-2 rounded-l-full cursor-pointer hover:bg-ui-600 group hover:text-secondary font-medium transition-all ${
-                        pathname.includes(repo.id) &&
-                        "bg-ui-600 text-secondary"
-                      }`}
-                    >
-                      <CollapsibleTrigger asChild>
-                        <Tooltip>
-                          <TooltipTrigger
-                            onClick={() => setCurrentTab(repo.id)}
-                            asChild
-                          >
+                {ownRepos.repos.length > 0 ? (
+                  <ul className="flex flex-col gap-2 w-full whitespace-nowrap pl-2">
+                    {ownRepos?.repos.map((repo) => (
+                      <Collapsible key={repo.id} open={currentTab === repo.id}>
+                        <li
+                          key={repo.id}
+                          className={`flex gap-3 items-center justify-between py-1 pl-4 pr-2 rounded-l-full cursor-pointer hover:bg-ui-600 group hover:text-secondary font-medium transition-all ${
+                            pathname.includes(repo.id) &&
+                            "bg-ui-600 text-secondary"
+                          }`}
+                        >
+                          <CollapsibleTrigger asChild>
+                            <Tooltip>
+                              <TooltipTrigger
+                                onClick={() => setCurrentTab(repo.id)}
+                                asChild
+                              >
+                                <Link
+                                  href={`/${repo.id}/query`}
+                                  replace={pathname === "/"}
+                                  className="flex flex-grow items-center gap-3 "
+                                >
+                                  <FolderOpenIcon className="h-6 w-6 " />
+                                  {repo.name.slice(0, 14)}
+                                  {repo.name.length > 14 && " ..."}
+                                </Link>
+                              </TooltipTrigger>
+                              {repo.name.length > 14 && (
+                                <TooltipContent side="bottom">
+                                  {repo.name}
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
+                          </CollapsibleTrigger>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                className={`!bg-transparent focus:!border-none focus:!outline-none focus:!ring-0 p-2 w-9 h-9 text-primary hover:!bg-ui-700 group-hover:text-secondary ${
+                                  pathname.includes(repo.id) && "text-secondary"
+                                }`}
+                              >
+                                <EllipsisVertical size={25} />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  openConfirmBox(repo.name, repo.id);
+                                }}
+                              >
+                                <button className="cursor-pointer text-red-500 flex items-center gap-2 font-semibold hover:!text-red-500">
+                                  <Trash2 size={18} /> Delete
+                                </button>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </li>
+                        <CollapsibleContent className="flex  gap-4 pl-8 ">
+                          <div className="flex flex-col gap-2 border-l-2 py-1 border-gray-300 pl-2 font-medium  w-full">
                             <Link
                               href={`/${repo.id}/query`}
                               replace={pathname === "/"}
-                              className="flex flex-grow items-center gap-3 "
+                              className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-ui-800 hover:text-secondary font-medium transition-all ${
+                                pathname.includes(`${repo.id}/query`) &&
+                                "bg-ui-800 text-secondary"
+                              }`}
                             >
-                              <FolderOpenIcon className="h-6 w-6 " />
-                              {repo.name.slice(0, 14)}
-                              {repo.name.length > 14 && " ..."}
+                              Query
                             </Link>
-                          </TooltipTrigger>
-                          {repo.name.length > 14 && (
-                            <TooltipContent side="bottom">
-                              {repo.name}
-                            </TooltipContent>
-                          )}
-                        </Tooltip>
-                      </CollapsibleTrigger>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            className={`!bg-transparent focus:!border-none focus:!outline-none focus:!ring-0 p-2 w-9 h-9 text-primary hover:!bg-ui-700 group-hover:text-secondary ${
-                              pathname.includes(repo.id) && "text-secondary"
-                            }`}
-                          >
-                            <EllipsisVertical size={25} />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              openConfirmBox(repo.name, repo.id);
-                            }}
-                          >
-                            <button className="cursor-pointer text-red-500 flex items-center gap-2 font-semibold hover:!text-red-500">
-                              <Trash2 size={18} /> Delete
-                            </button>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </li>
-                    <CollapsibleContent className="flex  gap-4 pl-8 ">
-                      <div className="flex flex-col gap-2 border-l-2 py-1 border-gray-300 pl-2 font-medium  w-full">
-                        <Link
-                          href={`/${repo.id}/query`}
-                          replace={pathname === "/"}
-                          className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-ui-800 hover:text-secondary font-medium transition-all ${
-                            pathname.includes(`${repo.id}/query`) &&
-                            "bg-ui-800 text-secondary"
-                          }`}
-                        >
-                          Query
-                        </Link>
-                        <Link
-                          href={`/${repo.id}/history`}
-                          replace={pathname === "/"}
-                          className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-ui-800 hover:text-secondary font-medium transition-all ${
-                            pathname.includes(`${repo.id}/history`) &&
-                            "bg-ui-800 text-secondary"
-                          }`}
-                        >
-                          History
-                        </Link>
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                ))}
-              </ul>
-              ):(
-                <>
-                <span className="px-9 font-semibold text-gray-500 ">
-                    Create a Repositry to start Chat
-                  </span>
-                </>
-              )
-            }
+                            <Link
+                              href={`/${repo.id}/history`}
+                              replace={pathname === "/"}
+                              className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-ui-800 hover:text-secondary font-medium transition-all ${
+                                pathname.includes(`${repo.id}/history`) &&
+                                "bg-ui-800 text-secondary"
+                              }`}
+                            >
+                              History
+                            </Link>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ))}
+                  </ul>
+                ) : (
+                  <>
+                    <span className="px-9 font-semibold text-gray-500 ">
+                      Create a Repositry to start Chat
+                    </span>
+                  </>
+                )}
               </>
             ) : (
               <>
@@ -347,7 +273,7 @@ export default function Sidebar() {
                     Add new
                   </Button>
                 </DialogTrigger>
-                <DialogContent className=" p-5 pt-8 max-w-sm">
+                <DialogContent className=" p-5 pt-8 max-w-sm w-[calc(100%-16px)] rounded-lg">
                   <form onSubmit={createRepo} className="flex flex-col gap-4">
                     <Label className="text-lg font-semibold">
                       Repository Name:
@@ -475,8 +401,7 @@ export default function Sidebar() {
                   <li
                     key={inbox.id}
                     className={`flex gap-3 items-center py-1 px-4 rounded-l-full cursor-pointer hover:bg-ui-600 group hover:text-secondary font-medium transition-all ${
-                      pathname.includes(inbox.id) &&
-                      "bg-ui-600 text-secondary"
+                      pathname.includes(inbox.id) && "bg-ui-600 text-secondary"
                     }`}
                   >
                     {" "}
@@ -544,7 +469,7 @@ export default function Sidebar() {
                 {userData.name.length > 0 ? (
                   <>
                     <div className="rounded-full overflow-hidden">
-                      <img
+                      <Image
                         src={
                           userData?.picture?.length !== 0
                             ? userData.picture
@@ -606,5 +531,122 @@ export default function Sidebar() {
         {...boxData}
       />
     </TooltipProvider>
+  );
+}
+
+export default function Sidebar() {
+  const [currentTab, setCurrentTab] = useState("");
+  const router=useRouter()
+  const [userData, setUsername] = useState({ name: "", picture: "" });
+  const [ownRepos, setOwnRepos] = useState<{
+    repos: RepoType[];
+    isLoaded: boolean;
+  }>({ repos: [], isLoaded: false });
+  const [sharedRepos, setSharedRepos] = useState<{
+    repos: RepoType[];
+    isLoaded: boolean;
+  }>({ repos: [], isLoaded: false });
+  const { setRepos } = useThreads();
+
+
+  useEffect(() => {
+
+    setUsername({
+      name: app.currentUser?.customData.name as string,
+      picture: app.currentUser?.customData.picture as string,
+    });
+    getOwnThreads();
+    getSharedThreads();
+    console.log("mounted")
+    console.log("unmounted")
+  }, []);
+
+  useEffect(() => {
+    setRepos([
+      ...ownRepos.repos,
+      ...sharedRepos.repos,
+      ...inboxes.map((inbox) => ({ id: inbox.id, name: inbox.name })),
+    ]);
+  }, [ownRepos, sharedRepos]);
+  useEffect(() => {
+    if (ownRepos.isLoaded && ownRepos.repos.length > 0) {
+      const id = ownRepos.repos[0].id;
+      setCurrentTab(id);
+      router.push(`/${id}/query`);
+    }
+    if (sharedRepos.isLoaded && sharedRepos.repos.length > 0) {
+      const id = sharedRepos.repos[0].id;
+      setCurrentTab(id);
+      if (sharedRepos.repos[0]?.shared_access.role === "Commenter") {
+        router.push(`/${id}/history`);
+      } else {
+        router.push(`/${id}/query`);
+      }
+    }
+  }, [ownRepos.isLoaded, sharedRepos.isLoaded]);
+  async function getOwnThreads() {
+    const mongo = app?.currentUser
+      ?.mongoClient("mongodb-atlas")
+      .db("private-gpt");
+    const repos = (await mongo?.collection("threads").find(
+      { userId: app.currentUser?.id },
+      {
+        projection: {
+          id: { $toString: "$_id" },
+          name: 1,
+          createdAt: 1,
+          userId: 1,
+        },
+      }
+    )) as RepoType[];
+    setOwnRepos({ repos, isLoaded: true });
+  }
+  async function getSharedThreads() {
+    const mongo = app?.currentUser
+      ?.mongoClient("mongodb-atlas")
+      .db("private-gpt");
+    const repos = (await mongo?.collection("threads").aggregate([
+      {
+        $match: {
+          shared_access: { $elemMatch: { userId: app?.currentUser?.id } },
+        },
+      },
+      {
+        $project: {
+          id: { $toString: "$_id" },
+          name: 1,
+          createdAt: 1,
+          userId: 1,
+          shared_access: {
+            $filter: {
+              input: "$shared_access",
+              as: "access",
+              cond: { $eq: ["$$access.userId", app?.currentUser?.id] },
+            },
+          },
+        },
+      },
+      { $unwind: "$shared_access" },
+    ])) as RepoType[];
+    setSharedRepos({ repos, isLoaded: true });
+  }
+  return (
+    <>
+      <div className="lg:hidden">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button  className="duration-500 transition-all   !w-10 !h-10 !p-0 object-contain fixed top-2 left-2  rounded-full  grid place-items-center">
+              <Menu strokeWidth={1.9} color="white" size={20}/>
+              </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-60 " >
+              <SidebarComponent getOwnThreads={getOwnThreads} getSharedThreads={getSharedThreads} ownRepos= {ownRepos} sharedRepos={sharedRepos} currentTab={currentTab} setCurrentTab={setCurrentTab} userData={userData}/>
+          </SheetContent>
+        </Sheet>
+      </div>
+      <div className="hidden lg:block min-w-60 ">
+        <SidebarComponent getOwnThreads={getOwnThreads} getSharedThreads={getSharedThreads} ownRepos= {ownRepos} sharedRepos={sharedRepos} currentTab={currentTab} setCurrentTab={setCurrentTab} userData={userData}/>
+      </div>
+    </>
   );
 }

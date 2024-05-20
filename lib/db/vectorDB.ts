@@ -95,6 +95,8 @@ function getContent(item: string | number | boolean | string[]) {
 export function isInbox(name: string) {
   return /gmail|hotmail|zoho/.test(name);
 }
+
+const omitKeys = /headings/;
 export async function queryGPT(
   messages: ChatCompletionMessageParam[],
   query: string,
@@ -169,6 +171,7 @@ export async function queryGPT(
           text:
             Object.entries(item.metadata as object).reduce(
               (acc, [key, item]) => {
+                if (omitKeys.test(key)) return acc;
                 return acc + `${key}:${getContent(item)}\n`;
               },
               ""
@@ -201,6 +204,7 @@ export async function queryGPT(
     responses: data.map((item) => ({
       text:
         Object.entries(item.metadata as object).reduce((acc, [key, item]) => {
+          if (omitKeys.test(key)) return acc;
           return acc + `${key}:${getContent(item)}\n`;
         }, "") + "\n",
       score: item.score as number,

@@ -14,18 +14,19 @@ export default function Comments({
     const diffDays = new Date().getDate() - date.getDate();
     const diffMonths = new Date().getMonth() - date.getMonth();
     const diffYears = new Date().getFullYear() - date.getFullYear();
+    const time=date.toTimeString();
     if (diffDays === 0 && diffMonths === 0 && diffYears === 0) {
-      return "today";
+      return "today • "+time.slice(0,5);
     }
     if(diffDays===1 && diffMonths===0 && diffYears===0){
       return "yesterday"
     }
     if(diffDays>1 && diffMonths===0 && diffYears===0){
-      return date.toDateString().split(" ")[0]+', ' + date.toDateString().split(" ").slice(1,3).join(" ")
+      return date.toDateString().split(" ")[0]+', ' + date.toDateString().split(" ").slice(1,3).join(" ")+' • ' +time.slice(0,5)
     }
 
     if(diffYears>0){
-      return date.toDateString().split(" ")[0]+', ' + date.toDateString().split(" ").slice(1,4).join(" ")
+      return date.toDateString().split(" ")[0]+', ' + date.toDateString().split(" ").slice(1,4).join(" ")+' • ' +time.slice(0,5)
     }
   }
   return (

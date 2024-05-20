@@ -14,6 +14,10 @@ import ShareRepo from "./ui/chat/share-repo";
 import { useThreads } from "./Wrapper";
 import { app } from "@/lib/db/realm";
 import { inboxConfig } from "@/lib/utils";
+import { deleteNameSpace } from "@/app/_action";
+import ChatMessagesAction from "./ui/chat/chat-messages-action";
+import { DropdownMenu, DropdownMenuTrigger,DropdownMenuContent } from "./ui/dropdown-menu";
+import { Ellipsis } from "lucide-react";
 
 function isInbox(name: string) {
   return /gmail|hotmail|zoho/.test(name);
@@ -57,10 +61,7 @@ export default function ChatSection() {
   async function handleReset() {
     try {
       setPending(!isPending);
-      const res = await fetch("/api/reset", {
-        method: "DELETE",
-        body: JSON.stringify({ indexName: params.id }),
-      });
+      await deleteNameSpace(params.id as string);
       router.push(`/${params.id}/add`);
     } catch (error) {
       console.log(error);
@@ -102,14 +103,9 @@ export default function ChatSection() {
   }
   useEffect(() => {
     const thread = threads?.find((item) => item.id === params.id);
-    console.log(thread);
     if (thread?.userId === app.currentUser?.id || /gmail|hotmail|zoho/.test(params.id as string)) {
       setCurrentUserRole("Admin");
     } else {
-      console.log(
-        !isInbox(params.id as string),
-        /Admin|Editor/.test(currenUserRole)
-      );
       setCurrentUserRole(
         thread?.shared_access?.role as "Editor" | "Commenter" | "Read-Only"
       );
@@ -125,8 +121,8 @@ export default function ChatSection() {
     }
   }, [transformedMessages, isStreamFinished]);
   return (
-    <div className="space-y-4 max-w-6xl w-[calc(100%-2rem)] scrollbar px-2 lg:px-0">
-      <div className="flex items-center justify-between bg-slate-100/50 backdrop-blur-md rounded-full p-1.5">
+    <div className="space-y-4 max-w-6xl w-[calc(100%-1rem)] lg:w-[calc(100%-2rem)] mx-auto scrollbar px-2 lg:px-0">
+      <div className="flex items-center justify-between  relative bg-slate-100/50 backdrop-blur-md rounded-full py-3 px-2 lg:p-1.5">
         <Slider
           defaultValue={[topK]}
           max={30}
@@ -141,7 +137,7 @@ export default function ChatSection() {
           onMouseLeave={() => {
             setIsHover(false);
           }}
-          className="w-[25%] ml-2"
+          className="w-1/2 lg:w-[25%] ml-2"
           onValueChange={(value) => {
             setTopK(value[0]);
           }}
@@ -150,55 +146,18 @@ export default function ChatSection() {
             console.log(topK);
           }}
         />
-        <div className="flex items-center gap-3">
-          {!isInbox(params.id as string) &&
-            /Admin|Editor/.test(currenUserRole) && <NewChat />}
-          {!isInbox(params.id as string) &&
-            /Admin|Editor/.test(currenUserRole) && (
-              <Button
-                onClick={handleReset}
-                variant="destructive-rfull"
-                className={`flex items-center gap-2 justify-center  ${
-                  isPending && "!bg-red-500"
-                }`}
-              >
-                {isPending ? (
-                  <span className="px-2.5">
-                    <l-dot-wave
-                      size={40}
-                      speed={1.6}
-                      color="white"
-                    ></l-dot-wave>
-                  </span>
-                ) : (
-                  <>
-                    <TrashIcon className="w-4 h-4" />
-                    Reset
-                  </>
-                )}
-              </Button>
-            )}
-          <ShareRepo Role={currenUserRole}>
-            <Button
-              onClick={() => {}}
-              variant={"blue-rfull"}
-              className="flex items-center gap-2"
-            >
-              <ShareIcon className="w-4 h-4" />
-              Share
-            </Button>
-          </ShareRepo>
-          <div
-            className={`${buttonVariants({
-              variant: "pale-rfull",
-            })} flex items-center gap-3 bg-white rounded-lg py-2 px-4`}
-          >
-            <Switch
-              checked={isAutoSaveOn}
-              onCheckedChange={() => setAutoSaveOn(!isAutoSaveOn)}
-            />
-            <p className="text-nowrap">Autosave</p>
-          </div>
+        <div className="items-center gap-3 hidden lg:flex">
+         <ChatMessagesAction currenUserRole={currenUserRole} handleReset={handleReset} setAutoSaveOn={setAutoSaveOn} isAutoSaveOn={isAutoSaveOn} isInbox={isInbox}isPending= {isPending}/>
+        </div>
+        <div className="lg:hidden pr-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center justify-center">
+              <Ellipsis className="h-6 w-6" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="flex flex-col gap-1 !w-44 mr-3">
+            <ChatMessagesAction currenUserRole={currenUserRole} handleReset={handleReset} setAutoSaveOn={setAutoSaveOn} isAutoSaveOn={isAutoSaveOn} isInbox={isInbox}isPending= {isPending}/>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       <ChatMessages

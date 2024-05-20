@@ -18,7 +18,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`gap-5 flex background-gradient items-start min-h-screen w-full scrollbar ${inter.className}`}
+        className={` flex background-gradient items-start overflow-hidden min-h-screen w-full scrollbar ${inter.className}`}
       >
         <Wrapper Sidebar={<Sidebar  />}>{children}</Wrapper>
       </body>

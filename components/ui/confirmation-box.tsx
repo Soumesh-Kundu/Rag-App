@@ -58,7 +58,7 @@ export default function ConfirmationBox({
       }}
     >
       <DialogTrigger ref={BoxTriggerRef}></DialogTrigger>
-      <DialogContent className="max-w-sm p-10 flex flex-col gap-8 items-center">
+      <DialogContent className="max-w-sm w-[calc(100%-16px)] rounded-lg p-10 flex flex-col gap-8 items-center">
         <span className="w-[calc(100%-20px)] text-center">
           Are you sure to delete <strong>{itemName.slice(0, 25)}</strong> and
           all its history and data ?
