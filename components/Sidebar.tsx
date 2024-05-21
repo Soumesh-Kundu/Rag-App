@@ -42,7 +42,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { app } from "@/lib/db/realm";
 import { deleteNameSpace, removeCookie } from "@/app/_action";
 import { Skeleton } from "./ui/skeleton";
-import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+import { Sheet, SheetClose, SheetContent, SheetTrigger } from "./ui/sheet";
 const inboxes = [
   { id: "gmail", name: "Gmail", imgSrc: "/google.png" },
   { id: "hotmail", name: "Outlook", imgSrc: "/outlook.webp" },
@@ -60,28 +60,35 @@ type RepoType = {
     role: "Editor" | "Commenter" | "Read-Only";
   };
 };
-type SideBarPropos={
+type SideBarPropos = {
   ownRepos: {
     repos: RepoType[];
     isLoaded: boolean;
-  },
-  getOwnThreads: () => Promise<void>,
-  currentTab: string,
-  setCurrentTab: (id: string) => void,
+  };
+  getOwnThreads: () => Promise<void>;
+  currentTab: string;
+  setCurrentTab: (id: string) => void;
   sharedRepos: {
     repos: RepoType[];
     isLoaded: boolean;
-  },
-  getSharedThreads: () => Promise<void>,
-  userData:{
-    name:string,picture:string
-  }
+  };
+  getSharedThreads: () => Promise<void>;
+  userData: {
+    name: string;
+    picture: string;
+  };
+  closeSideBar?: () => void;
+};
 
-
-
-}
-
-export function SidebarComponent({ownRepos,getOwnThreads,currentTab,setCurrentTab,sharedRepos,userData}:SideBarPropos) {
+export function SidebarComponent({
+  ownRepos,
+  getOwnThreads,
+  currentTab,
+  setCurrentTab,
+  sharedRepos,
+  userData,
+  closeSideBar,
+}: SideBarPropos) {
   const addRepoRef = useRef<HTMLButtonElement>(null);
   const [addRepoName, setAddRepoName] = useState("");
 
@@ -97,7 +104,6 @@ export function SidebarComponent({ownRepos,getOwnThreads,currentTab,setCurrentTa
   const router = useRouter();
   const pathname = usePathname();
 
-  
   async function createRepo(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (isLoading) return;
@@ -171,7 +177,12 @@ export function SidebarComponent({ownRepos,getOwnThreads,currentTab,setCurrentTa
                           <CollapsibleTrigger asChild>
                             <Tooltip>
                               <TooltipTrigger
-                                onClick={() => setCurrentTab(repo.id)}
+                                onClick={() => {
+                                  setCurrentTab(repo.id);
+                                  if (closeSideBar) {
+                                    closeSideBar();
+                                  }
+                                }}
                                 asChild
                               >
                                 <Link
@@ -314,7 +325,12 @@ export function SidebarComponent({ownRepos,getOwnThreads,currentTab,setCurrentTa
                           <CollapsibleTrigger asChild>
                             <Tooltip>
                               <TooltipTrigger
-                                onClick={() => setCurrentTab(repo.id)}
+                                onClick={() => {
+                                  setCurrentTab(repo.id);
+                                  if (closeSideBar) {
+                                    closeSideBar();
+                                  }
+                                }}
                                 asChild
                               >
                                 <Link
@@ -406,7 +422,12 @@ export function SidebarComponent({ownRepos,getOwnThreads,currentTab,setCurrentTa
                   >
                     {" "}
                     <CollapsibleTrigger
-                      onClick={() => setCurrentTab(inbox.id)}
+                      onClick={() => {
+                        setCurrentTab(inbox.id);
+                        if (closeSideBar) {
+                          closeSideBar();
+                        }
+                      }}
                       asChild
                     >
                       <Link
@@ -536,7 +557,8 @@ export function SidebarComponent({ownRepos,getOwnThreads,currentTab,setCurrentTa
 
 export default function Sidebar() {
   const [currentTab, setCurrentTab] = useState("");
-  const router=useRouter()
+  const router = useRouter();
+  const CloseSideBarRef = useRef<HTMLButtonElement | null>(null);
   const [userData, setUsername] = useState({ name: "", picture: "" });
   const [ownRepos, setOwnRepos] = useState<{
     repos: RepoType[];
@@ -548,17 +570,15 @@ export default function Sidebar() {
   }>({ repos: [], isLoaded: false });
   const { setRepos } = useThreads();
 
-
   useEffect(() => {
-
     setUsername({
       name: app.currentUser?.customData.name as string,
       picture: app.currentUser?.customData.picture as string,
     });
     getOwnThreads();
     getSharedThreads();
-    console.log("mounted")
-    console.log("unmounted")
+    console.log("mounted");
+    console.log("unmounted");
   }, []);
 
   useEffect(() => {
@@ -584,6 +604,11 @@ export default function Sidebar() {
       }
     }
   }, [ownRepos.isLoaded, sharedRepos.isLoaded]);
+
+  function closeSideBar() {
+    CloseSideBarRef.current?.click();
+  }
+
   async function getOwnThreads() {
     const mongo = app?.currentUser
       ?.mongoClient("mongodb-atlas")
@@ -635,17 +660,35 @@ export default function Sidebar() {
       <div className="lg:hidden">
         <Sheet>
           <SheetTrigger asChild>
-            <Button  className="duration-500 transition-all   !w-10 !h-10 !p-0 object-contain fixed top-2 left-2  rounded-full  grid place-items-center">
-              <Menu strokeWidth={1.9} color="white" size={20}/>
-              </Button>
+            <Button className="duration-500 transition-all   !w-10 !h-10 !p-0 object-contain fixed top-2 left-2  rounded-full  grid place-items-center">
+              <Menu strokeWidth={1.9} color="white" size={20} />
+            </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-60 " >
-              <SidebarComponent getOwnThreads={getOwnThreads} getSharedThreads={getSharedThreads} ownRepos= {ownRepos} sharedRepos={sharedRepos} currentTab={currentTab} setCurrentTab={setCurrentTab} userData={userData}/>
+          <SheetContent side="left" className="p-0 w-60 ">
+            <SheetClose ref={CloseSideBarRef} className="hidden"></SheetClose>
+            <SidebarComponent
+              getOwnThreads={getOwnThreads}
+              getSharedThreads={getSharedThreads}
+              ownRepos={ownRepos}
+              sharedRepos={sharedRepos}
+              currentTab={currentTab}
+              setCurrentTab={setCurrentTab}
+              userData={userData}
+              closeSideBar={closeSideBar}
+            />
           </SheetContent>
         </Sheet>
       </div>
       <div className="hidden lg:block min-w-60 ">
-        <SidebarComponent getOwnThreads={getOwnThreads} getSharedThreads={getSharedThreads} ownRepos= {ownRepos} sharedRepos={sharedRepos} currentTab={currentTab} setCurrentTab={setCurrentTab} userData={userData}/>
+        <SidebarComponent
+          getOwnThreads={getOwnThreads}
+          getSharedThreads={getSharedThreads}
+          ownRepos={ownRepos}
+          sharedRepos={sharedRepos}
+          currentTab={currentTab}
+          setCurrentTab={setCurrentTab}
+          userData={userData}
+        />
       </div>
     </>
   );
