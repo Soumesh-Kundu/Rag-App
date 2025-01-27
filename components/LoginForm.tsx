@@ -39,9 +39,6 @@ export default function LoginForm() {
       password: "",
     },
   });
-  useEffect(() => {
-    console.log(app?.currentUser);
-  }, []);
   async function googleLogin() {
     try {
       const user=await googlelogin()

@@ -2,7 +2,7 @@ import { Folders } from "lucide-react";
 import { cookies } from "next/headers";
 import { permanentRedirect } from "next/navigation";
 export default async function Home() {
-  const cookieStore=cookies()
+  const cookieStore=await cookies()
   if(cookieStore.get('authToken')===undefined){
     permanentRedirect('/login')
   }

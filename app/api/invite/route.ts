@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sign } from "jsonwebtoken";
 import { serverUser as server_user } from "@/lib/db/realm";
-import { sendMail } from "@/lib/db/mailer";
+import { sendMail } from "@/lib/mailer";
 export async function POST(request: NextRequest) {
   try {
     const serverUser = await server_user();

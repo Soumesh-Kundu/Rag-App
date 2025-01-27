@@ -67,7 +67,7 @@ export default function SignInForm() {
   async function onSignupSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const user = await registerEmailPassword(values.email, values.password);
+      const user = await registerEmailPassword(values);
       if (!user) {
         console.log("error");
       }

@@ -6,7 +6,7 @@ export default async function layout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   if (cookieStore.get("authToken") === undefined) {
     permanentRedirect("/login");
   }

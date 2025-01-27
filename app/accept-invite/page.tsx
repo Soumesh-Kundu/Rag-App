@@ -45,12 +45,13 @@ async function addInvitation({
   await db.collection("tokens").deleteOne({ _id: { $oid: tokenId } });
   return true;
 }
-export default async function page({
-  searchParams,
-}: {
-  params: { slug: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
-}) {
+export default async function page(
+  props: {
+    params: Promise<{ slug: string }>;
+    searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   if(searchParams?.token === undefined || searchParams?.tokenId === undefined){
     permanentRedirect("/login")
   }

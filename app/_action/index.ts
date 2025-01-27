@@ -2,7 +2,7 @@
 
 import { serverUser as server_user } from "@/lib/db/realm";
 import { sign } from "jsonwebtoken";
-import { sendMail } from "@/lib/db/mailer";
+import { sendMail } from "@/lib/mailer";
 import { cookies, headers } from "next/headers";
 import { config, pcRepo } from "@/lib/db/vectorDB";
 type InviteBody = {
@@ -67,11 +67,11 @@ export async function addUser(email: string, name: string) {
 }
 
 export async function setCookie(token: string){
-  const cookieStore=cookies()
+  const cookieStore=await cookies()
   cookieStore.set('authToken',token)
 }
 export async function removeCookie(){
-  const cookieStore=cookies()
+  const cookieStore=await cookies()
   cookieStore.delete('authToken')
 }
 
