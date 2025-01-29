@@ -25,11 +25,12 @@ const ThreadsContext = createContext<ContextProps>({
 const unAuthorizedRoutes=[
   'login',
   'signup',
-  'confirm-email',
   'reset-password',
   'forgot-password',
   'callback',
-  'accept-invite'
+  'accept-invite',
+  'verify',
+  'test'
 ]
 export default function Wrapper({
   children,

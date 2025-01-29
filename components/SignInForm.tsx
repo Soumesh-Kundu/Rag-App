@@ -19,6 +19,7 @@ import { CheckCircle2 } from "lucide-react";
 import { googlelogin, registerEmailPassword, serverUser } from "@/lib/db/realm";
 import { addUser } from "@/app/_action";
 import { useRouter } from "next/navigation";
+import { registerUser } from "@/app/_action/auth";
 
 const formSchema = z.object({
   name: z.string().min(1, {
@@ -42,6 +43,7 @@ export default function SignInForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      name:"",
       email: "",
       password: "",
     },
@@ -54,11 +56,6 @@ export default function SignInForm() {
         console.log("google auth error")
         return
       }
-      await Promise.all([
-        user?.refreshProfile(),
-        user?.refreshAccessToken(),
-        user?.refreshCustomData(),
-      ]);
       router.replace("/");
     } catch (error) {
       console.log(error)
@@ -67,14 +64,11 @@ export default function SignInForm() {
   async function onSignupSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const user = await registerEmailPassword(values);
-      if (!user) {
-        console.log("error");
-      }
-      await addUser(values.email,values.name)
-      setIsLoggedIn(true);
+      const sucess=await registerUser(values)
+      setIsLoggedIn(sucess);
     } catch (error) {
       console.log(error);
+      setIsLoggedIn(false);
     }
     setIsLoading(false);
   }

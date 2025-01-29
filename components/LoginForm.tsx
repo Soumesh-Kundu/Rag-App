@@ -3,6 +3,7 @@ import Link from "next/link";
 import Loader from "./Loader";
 import { Button } from "./ui/button";
 import { FormEvent, useEffect, useState } from "react";
+import {signIn} from 'next-auth/react'
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -17,6 +18,7 @@ import {
 import { Input } from "./ui/input";
 import { app, currentUser, googlelogin, loginEmailPassword } from "@/lib/db/realm";
 import { useRouter } from "next/navigation";
+// import {toast} from 'react-toastify'
 
 const formSchema = z.object({
   email: z
@@ -58,23 +60,26 @@ export default function LoginForm() {
   }
   async function onLoginSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    try {
-      const user = await loginEmailPassword(values.email, values.password);
-      if (!user) {
-        console.log("error");
-      } else {
-        console.log(user);
-        await Promise.all([
-          user?.refreshProfile(),
-          user?.refreshAccessToken(),
-          user?.refreshCustomData(),
-        ]);
-        router.replace("/");
-      }
-    } catch (error) {
-      console.log(error);
+    const signInData = await signIn("credentials", {
+      email: values.email,
+      password: values.password,
+      redirect: false,
+    });
+    console.log(signInData)
+    if (signInData?.ok) {
+      router.replace("/test");
+      return;
     }
-    setIsLoading(false);
+    if (signInData?.status === 401) {
+      console.log("Invalid Credentials");
+      // toast.error("Invalid Credentials");
+      return;
+    }
+    if (signInData?.status === 500) {
+      console.log("Internal Server Error");
+      // toast.error("Internal Server Error");
+      return;
+    }
   }
   return (
     <div className="flex flex-col gap-8 px-6 py-8 w-full items-center justify-center">

@@ -1,4 +1,17 @@
-import {drizzle} from 'drizzle-orm/node-postgres'
-import * as schema from './schema'
+import { PrismaClient } from "@prisma/client"
 
-export const db=drizzle(process.env.NEXT_DB_URL!,{schema})
+// export const db=new PrismaClient()
+function  prismaClientSingleton() {
+  const prisma = new PrismaClient()
+  return prisma
+}
+
+type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClientSingleton | undefined
+}
+
+export const db = globalForPrisma.prisma ?? prismaClientSingleton()
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db

@@ -45,5 +45,6 @@ export  async function sendMail(mailBody:MailObject
         userId:"me",
         requestBody:{raw}
     })
-    console.log(id)
+    // console.log(id)
+    return id
 }
