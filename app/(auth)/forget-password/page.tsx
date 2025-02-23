@@ -70,8 +70,8 @@ export default function Page() {
   }
   return (
     <>
-      <main className="flex flex-col gap-8 px-6 py-8 w-full items-center md:justify-start  h-screen">
-        <div className="flex items-center justif-center gap-1 -translate-x-5 mt-24 lg:mt-12 xl:mt-0 2xl:mt-24">
+      <main className="flex flex-col px-6 sm:-translate-y-5 w-full items-center justify-center  h-screen">
+        <div className="flex items-center justif-center -translate-x-5 ">
           <Image
             src="/chatbot_rbg.png"
             alt="chatbot_image"

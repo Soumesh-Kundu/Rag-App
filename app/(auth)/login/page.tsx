@@ -10,8 +10,8 @@ export default async function page() {
     permanentRedirect("/");
   }
   return (
-    <main className="flex flex-col items-center h-screen w-screen ">
-      <div className="flex items-center justif-center gap-1 -translate-x-5 mt-24 lg:mt-12 xl:mt-0 2xl:mt-24">
+    <main className="flex flex-col items-center justify-center h-screen w-screen sm:-translate-y-5 ">
+      <div className="flex items-center justif-center gap-1 -translate-x-5 ">
           <Image src="/chatbot_rbg.png" alt="chatbot_image" width={100} height={100}/>
         <h2 className="text-3xl font-semibold">Doc<span className="text-ui-600">GPT</span></h2>
       </div>

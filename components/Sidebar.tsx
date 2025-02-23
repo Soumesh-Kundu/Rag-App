@@ -389,7 +389,8 @@ export function SidebarComponent({ useRepos, closeSideBar }: SideBarPropos) {
                                   replace={pathname === "/"}
                                   className="flex flex-grow items-center gap-3 "
                                 >
-                                  <FolderOpenIcon className="h-6 w-6 " />
+                                  {currentThread?.id===repo.id?<FolderOpenIcon className="h-6 w-6 " />:
+                                  <FolderClosed className="h-6 w-6 " />}
                                   {repo.name.slice(0, 14)}
                                   {repo.name.length > 14 && " ..."}
                                 </Link>
