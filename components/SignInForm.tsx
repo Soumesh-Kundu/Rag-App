@@ -172,7 +172,7 @@ export default function SignInForm() {
                 onClick={googleLogin}
                 type="button"
               >
-                <Image src="/google.png" alt="Google Logo" width={24} />
+                <Image src="/google.png" alt="Google Logo" width={24} priority/>
               </Button>
             </div>
           </div>

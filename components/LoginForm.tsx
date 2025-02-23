@@ -135,7 +135,7 @@ export default function LoginForm() {
         </div>
         <div className="grid grid-cols-3 gap-2  ">
           <Button variant="secondary" className="col-span-3 border-gray-300 border !rounded-md" onClick={googleLogin} type="button">
-            <Image src="/google.png" alt="Google Logo" width={24} />
+            <Image src="/google.png" alt="Google Logo" width={24}  priority/>
           </Button>
         </div>
       </div>
