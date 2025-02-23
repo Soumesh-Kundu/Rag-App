@@ -30,9 +30,9 @@ export default function ViewSection({messages}:{messages:(Messages & {comments:c
   }
   return (
     <TooltipProvider>
-      <div className="space-y-4 max-w-6xl  w-[calc(100%-0.5rem)] lg:w-[calc(90%)] scrollbar px-1 lg:px-0">
+      <div className="space-y-4 max-w-6xl  w-[calc(100%-0.5rem)] lg:w-[calc(90%)] scrollbar px-1 lg:px-0 pt-5 sm:pt-0">
         <div className="w-full rounded-lg bg-white px-3 py-4 md:px-4 shadow-xl mt-8 lg:mt-0 pb-0">
-          <div className="flex max-h-[85dvh] scrollbar pr-1 flex-col gap-5 divide-y overflow-y-auto pb-4 duration-300">
+          <div className="flex max-h-[85dvh] scrollbar pr-1  flex-col gap-5 divide-y overflow-y-auto pb-4 duration-300">
             {messages?.length > 0 ? (
               messages.map((m, index) => (
                 <ViewMessage
@@ -45,7 +45,7 @@ export default function ViewSection({messages}:{messages:(Messages & {comments:c
                 />
               ))
             ) : (
-              <div className="w-full h-[60dvh] flex flex-col justify-center items-center font-bold text-2xl text-gray-400 ">
+              <div className="w-full h-[55dvh] flex flex-col justify-center items-center font-bold text-2xl text-gray-400 ">
                 <PackageOpen strokeWidth={0.8} size={90} />
                 No message history...
               </div>
