@@ -12,7 +12,7 @@ export type EmbeddingData={
 export function cleanData(data:CleanData[]):CleanData[] {
     const unwanted_patterns = [
         /\\n/g, /  —/g, /——————————/g,/-+/g,/---/g, /—————————/g, /—————/g,
-        /\\u[\dA-Fa-f]{4}/g,/\.{4,}/g, /\uf075/g, /\uf0b7/g,/-+/g
+        /\\u[\dA-Fa-f]{4}/g,/\.{4,}/g, /\uf075/g, /\uf0b7/g,/-+/g,/●/g
     ]
     data = data.map((item) => {
         let text = item.text
@@ -31,6 +31,6 @@ export  function extractKeyword(docs:{filename:string,data:CleanData[]} | undefi
     if(!docs){
         return []
     }
-    return docs.data.map(item => ({id:randomUUID(), keywords: [docs.filename,...item.metadata] , textToEmbed: item?.text}))
+    return docs.data.map(item => ({id:`${docs.filename}#${randomUUID()}`, keywords: [docs.filename,...item.metadata] , textToEmbed: item?.text}))
 }
 

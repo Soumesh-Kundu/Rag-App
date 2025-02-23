@@ -14,6 +14,7 @@ const buttonVariants = cva(
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
 
         "primary-rfull":"rounded-md lg:rounded-full lg:text-primary text-secondary bg-primary lg:bg-white lg:hover:bg-primary lg:hover:text-secondary",
+        "ui-rfull":"rounded-md lg:rounded-full lg:text-primary text-secondary bg-ui-500 lg:bg-white lg:hover:bg-ui-500 lg:hover:text-secondary",
         
         "pale-rfull":"rounded-md lg:rounded-full lg:bg-white ",
         

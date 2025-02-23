@@ -1,11 +1,9 @@
 {
-  "experimental": {
-    "outputFileTracingIncludes": {
-      "/*": [
-        "./cache/**/*"
-      ]
-    },
-    "serverComponentsExternalPackages": ["pdf2json"]
+  "serverExternalPackages": ["mupdf"],
+  "outputFileTracingIncludes": {
+    "/*": [
+      "./cache/**/*"
+    ]
   },
   "trailingSlash":true,
   "images": {

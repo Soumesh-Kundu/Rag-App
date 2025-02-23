@@ -16,8 +16,9 @@ import {
   FormMessage,
 } from "./ui/form";
 import { Input } from "./ui/input";
-import { app, currentUser, googlelogin, loginEmailPassword } from "@/lib/db/realm";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { useToast } from "@/hooks/use-toast";
 // import {toast} from 'react-toastify'
 
 const formSchema = z.object({
@@ -34,6 +35,7 @@ export default function LoginForm() {
   const router = useRouter();
 
   const [isLoading, setIsLoading] = useState(false);
+  const {toast}=useToast()  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -42,42 +44,25 @@ export default function LoginForm() {
     },
   });
   async function googleLogin() {
-    try {
-      const user=await googlelogin()
-      if(!user){
-        console.log("google auth error")
-        return
-      }
-      await Promise.all([
-        user?.refreshProfile(),
-        user?.refreshAccessToken(),
-        user?.refreshCustomData(),
-      ]);
-      router.replace("/");
-    } catch (error) {
-      console.log(error)
-    }
+    await signIn("google",{redirect:true,callbackUrl:'/'})
   }
   async function onLoginSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     const signInData = await signIn("credentials", {
       email: values.email,
       password: values.password,
-      redirect: false,
+      callbackUrl:'/'
     });
-    console.log(signInData)
     if (signInData?.ok) {
       router.replace("/test");
       return;
     }
     if (signInData?.status === 401) {
-      console.log("Invalid Credentials");
-      // toast.error("Invalid Credentials");
+      toast({variant:"destructive",description:"Invalid Email or Password"});
       return;
     }
     if (signInData?.status === 500) {
-      console.log("Internal Server Error");
-      // toast.error("Internal Server Error");
+      toast({variant:"destructive", title:"Oops!!",description:"Something wrong happend!"});
       return;
     }
   }
@@ -128,33 +113,29 @@ export default function LoginForm() {
                 Sign up
               </Link>
             </p>
-            <Button type="submit">
+            <Button type="submit" className="!bg-ui-600 !text-white">
               {isLoading ? (
                 <Loader color="white" stroke={1.6} size={20} />
               ) : (
-                "Sign in"
+                "Log in"
               )}
             </Button>
+              <Link
+                href="/forget-password"
+                className="font-medium text-sm  my-2 text-center text-blue-600 hover:underline dark:text-blue-500"
+              >
+               Forget Your Password ?
+              </Link>
           </form>
         </Form>
-        <div className="flex w-full items-center my-4">
+        <div className="flex w-full items-center mb-2">
           <p className="border-t w-full"></p>
           <p className="px-4">or</p>
           <p className="border-t w-full"></p>
         </div>
         <div className="grid grid-cols-3 gap-2  ">
-          <Button variant="outline" onClick={googleLogin} type="button">
-            <img src="/google.png" alt="Google Logo" width="24" />
-          </Button>
-          <Button
-            variant="outline"
-            type="button"
-            className="!bg-blue-500 hover:!bg-blue-600"
-          >
-            <img src="/facebook.png" alt="Google Logo" width="30" />
-          </Button>
-          <Button type="button">
-            <img src="/github.png" alt="Google Logo" width="30" />
+          <Button variant="secondary" className="col-span-3 border-gray-300 border !rounded-md" onClick={googleLogin} type="button">
+            <Image src="/google.png" alt="Google Logo" width={24} />
           </Button>
         </div>
       </div>

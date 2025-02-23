@@ -3,6 +3,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Button } from "./ui/button";
 import { Trash2 } from "lucide-react";
+import Dotwave from "./Loaders/Dotwave";
 export default function FileUpload() {
   const [dragActive, setDragActive] = useState<boolean>(false);
   const inputRef = useRef<any>(null);
@@ -12,7 +13,6 @@ export default function FileUpload() {
   const params = useParams();
   function handleChange(e: any) {
     e.preventDefault();
-    console.log("File has been added");
     if (e.target.files && e.target.files[0]) {
       for (let i = 0; i < e.target.files["length"]; i++) {
         setFiles((prevState: any) => [...prevState, e.target.files[i]]);
@@ -30,7 +30,6 @@ export default function FileUpload() {
     for (let file of files) {
       formData.append("files", file);
     }
-    console.log(formData);
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
@@ -108,7 +107,7 @@ export default function FileUpload() {
               type="file"
               multiple
               onChange={handleChange}
-              accept=".xlsx,.xls,.doc, .docx,.ppt, .pptx,.txt,.pdf"
+              accept=".pdf"
             />
 
             <p>
@@ -119,7 +118,7 @@ export default function FileUpload() {
               >
                 <u>Select files</u>
               </span>{" "}
-              to upload
+              to upload (PDF only)
             </p>
 
             <div className="flex flex-col items-center p-3 ">
@@ -142,15 +141,15 @@ export default function FileUpload() {
             </div>
 
             <Button
-              className="bg-black rounded-lg  mt-3 w-auto"
+              className="!bg-ui-600 rounded-lg  mt-3 w-auto"
               onClick={handleSubmitFile}
             >
               {isLoading ? (
                 <span className="px-1 ">
-                  <l-dot-wave size={40} speed={1.6} color="white"></l-dot-wave>
+                  <Dotwave size={40} speed={1.6} color="white"></Dotwave>
                 </span>
               ) : (
-                <span className="px-1 text-white">Submit</span>
+                <span className="px-1 text-white">Upload</span>
               )}
             </Button>
           </form>

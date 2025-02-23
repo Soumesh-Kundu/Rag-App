@@ -19,7 +19,18 @@ enum TokenType{
   password
   share
 }
+enum Role{
+  owner
+  editor
+  viewer
+  commentor
+}
 
+enum ChatRole{
+  assistant
+  user
+  system
+}
 //model schemas
 model Users{
   id Int @id @default(autoincrement())
@@ -28,13 +39,68 @@ model Users{
   password String? @db.VarChar(255)
   image String?
   verified Boolean @default(false)
+
+  //relations
   tokens Tokens[]
+  repos Access_Repo[]
+  comments Comments[]
 }
 
 model Tokens{
   id Int @id @default(autoincrement())
   userid Int 
-  user Users @relation(fields: [userid], references: [id])
+  repoid Int?
+  role Role?
   type TokenType
   expiresIn DateTime 
+
+  user Users @relation(fields: [userid], references: [id])
+  @@unique([userid,type,repoid],name:"unique_token") 
+}
+
+model Repos{
+  id Int @id @default(autoincrement())
+  name String @db.VarChar(255)
+  created_at DateTime @default(now())
+  nameSpace String @unique @default(uuid()) @db.Uuid
+
+  //relations
+  users Access_Repo[]
+  messages Messages[]
+}
+
+model Messages{
+  id Int @id @default(autoincrement())
+  threadId Int 
+  content String 
+  createdAt DateTime @default(now())
+  role ChatRole
+  data Json? @db.Json
+  //relations
+  repo Repos @relation(fields: [threadId], references: [id],onDelete: Cascade)
+  comments Comments[]
+}
+
+model Comments{
+  id Int @id @default(autoincrement())
+  messageId Int
+  text String
+  createdAt DateTime @default(now())
+  userId Int
+
+  //relations
+  user Users @relation(fields: [userId], references: [id])
+  message Messages @relation(fields: [messageId], references: [id],onDelete: Cascade)
+}
+
+model Access_Repo{
+  userid Int
+  repoid Int
+  role Role @default(owner)
+
+  //relations
+  user Users @relation(fields: [userid], references: [id])
+  repo Repos @relation(fields: [repoid], references: [id],onDelete: Cascade)
+
+  @@id([userid,repoid])
 }

@@ -1,8 +1,19 @@
-import { NextAuthOptions, User } from "next-auth";
+import { getServerSession, NextAuthOptions, User } from "next-auth";
 import CredentialProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { db } from "./db";
 import { compare } from "bcrypt";
+
+declare module "next-auth" {
+  interface Session {
+      user: {
+          id: string;
+          email: string;
+          name: string;
+          image: string;
+      };
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   pages: {
@@ -53,42 +64,42 @@ export const authOptions: NextAuthOptions = {
         },
       },
       async profile(profile) {
-        let user=await db.users.upsert({where:{email:profile.email},update:{image:profile.picture},create:{email:profile.email,name:profile.name,image:profile.picture},select:{id:true}});
-        return {
+        let user=await db.users.findFirst({where:{email:profile.email},select:{id:true}});
+        if(!user){
+          user=await db.users.create({
+            data:{
+              email:profile.email,
+              name:profile.name,
+              image:profile.picture,
+              verified:true,
+              repos:{
+                create:{
+                  repo:{
+                    create:{
+                      name:"First Repo",
+                    }
+                  }
+                }
+              }
+            },
+            select:{id:true}
+          })
+        }
+        else{
+          user=await db.users.update({where:{id:user.id},data:{image:profile.picture},select:{id:true}});
+        }
+        const result={
           id: `${user?.id}`,
           name: profile.name,
           email: profile.email,
           image: profile.picture,
-        };
+        }
+        return result ;
       },
     }),
   ],
   callbacks: {
-    // async signIn({ user: profile, account }) {
-    //   console.log("from sign in",profile,account)
-    //   if (account?.provider === "google") {
-    //     const user = await db.users.findFirst({
-    //       where: { id: parseInt(profile.id) },
-    //     });
-    //     if(!profile?.email || !profile?.name || !profile?.image) return false;
-    //     if (!user) {
-    //       const userOBj={
-    //         name:profile.name,
-    //         email:profile.email,
-    //         image:profile.image,
-    //       }
-    //       await db.users.create({data:userOBj});
-    //       return true;
-    //     }
-    //     if (!user?.image) {
-    //       await db.users.update({where:{id:user.id},data:{image:profile.image}});
-    //     }
-    //     return true;
-    //   }
-    //   return true;
-    // },
     async jwt({ token, user }) {
-      console.log("from jwt",token,user)
       if (user) {
         return {
           ...token,
@@ -99,7 +110,6 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      console.log("from session",session,token)
       if (token) {
         return {
           ...session,
@@ -114,3 +124,8 @@ export const authOptions: NextAuthOptions = {
     },
   },
 };
+
+
+export async function getServerUser(){
+  return getServerSession(authOptions)
+}

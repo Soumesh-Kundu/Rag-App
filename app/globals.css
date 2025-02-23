@@ -75,9 +75,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings:
-      "rlig" 1,
-      "calt" 1;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
   .background-gradient {
     background-color: #fff;
@@ -92,42 +90,146 @@
   }
 }
 
-.scrollbar::-webkit-scrollbar{
-  width: 5px;
+.scrollbar::-webkit-scrollbar {
+  width: 11px;
   padding-left: 2px;
 }
-.scrollbar::-webkit-scrollbar-track{
-  background: #f1f1f1;
+.scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
-.scrollbar::-webkit-scrollbar-thumb{
-  background: #b1b1b1;
-  @apply rounded-xl
+.scrollbar::-webkit-scrollbar-thumb {
+  background: #949393;
+  border-radius: 10px !important;
+  border: 2.5px solid transparent !important;
+  background-clip: content-box !important;
 }
-body::-webkit-scrollbar{
+body::-webkit-scrollbar {
   width: 10px;
 }
-body::-webkit-scrollbar-track{
+body::-webkit-scrollbar-track {
   background: #f1f1f1;
 }
-body::-webkit-scrollbar-thumb{
+body::-webkit-scrollbar-thumb {
   background: #888;
-  @apply rounded-xl
+  @apply rounded-xl;
 }
 
-.no-scrollbar::-webkit-scrollbar{
+.no-scrollbar::-webkit-scrollbar {
   display: none;
-  width:0px;
+  width: 0px;
 }
 
-.animation-disappear{
-  animation:disappear 500ms linear;
+.animation-disappear {
+  animation: disappear 500ms linear;
 }
 
 @keyframes disappear {
-  0%{
-    @apply scale-100
+  0% {
+    @apply scale-100;
   }
-  100%{
-    @apply scale-0 hidden
+  100% {
+    @apply scale-0 hidden;
+  }
+}
+
+.container {
+  --uib-size: 70px;
+  --uib-color: black;
+  --uib-speed: 2s;
+  --uib-bg-opacity: 0;
+  height: var(--uib-size);
+  width: var(--uib-size);
+  animation: rotate var(--uib-speed) linear infinite;
+  transform-origin: center;
+  will-change: transform;
+  overflow: visible;
+}
+
+.car {
+  fill: none;
+  stroke: var(--uib-color);
+  stroke-dasharray: 1, 200;
+  stroke-dashoffset: 0;
+  stroke-linecap: round;
+  animation: stretch calc(var(--uib-speed) * 0.75) ease-in-out infinite;
+  will-change: stroke-dasharray, stroke-dashoffset;
+  transition: stroke 0.5s ease;
+}
+
+.track {
+  fill: none;
+  stroke: var(--uib-color);
+  opacity: var(--uib-bg-opacity);
+  transition: stroke 0.5s ease;
+}
+
+@keyframes rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes stretch {
+  0% {
+    stroke-dasharray: 0, 150;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 75, 150;
+    stroke-dashoffset: -25;
+  }
+  100% {
+    stroke-dashoffset: -100;
+  }
+}
+
+.container-dot-wave {
+  --uib-size: 47px;
+  --uib-color: black;
+  --uib-speed: 1s;
+  --uib-dot-size: calc(var(--uib-size) * 0.18);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: calc(var(--uib-size) * 0.5);
+  width: var(--uib-size);
+}
+
+.dot {
+  flex-shrink: 0;
+  width: calc(var(--uib-size) * 0.17);
+  height: calc(var(--uib-size) * 0.17);
+  border-radius: 50%;
+  background-color: var(--uib-color);
+  transition: background-color 0.3s ease;
+}
+
+.dot:nth-child(1) {
+  animation: jump var(--uib-speed) ease-in-out calc(var(--uib-speed) * -0.45)
+    infinite;
+}
+
+.dot:nth-child(2) {
+  animation: jump var(--uib-speed) ease-in-out calc(var(--uib-speed) * -0.3)
+    infinite;
+}
+
+.dot:nth-child(3) {
+  animation: jump var(--uib-speed) ease-in-out calc(var(--uib-speed) * -0.15)
+    infinite;
+}
+
+.dot:nth-child(4) {
+  animation: jump var(--uib-speed) ease-in-out infinite;
+}
+
+@keyframes jump {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-200%);
   }
 }

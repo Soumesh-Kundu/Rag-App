@@ -2,11 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "./button";
 import { Dialog, DialogClose, DialogContent, DialogTrigger } from "./dialog";
 import Loader from "../Loader";
+import { DialogTitle } from "@radix-ui/react-dialog";
 type ConfirmationBoxProps = {
   itemName: string;
   status: "open" | "closed" | string;
-  id: string;
-  onConfirm: (id: string) => Promise<{ success: boolean }>;
+  id: number;
+  onConfirm: (
+    id: number
+  ) => Promise<void>;
   onCancel: () => void;
 };
 
@@ -17,13 +20,12 @@ export default function ConfirmationBox({
   onCancel,
   onConfirm,
 }: ConfirmationBoxProps) {
-  const BoxTriggerRef = useRef<HTMLButtonElement>(null);
-  const BoxCloseRef = useRef<HTMLButtonElement>(null);
+  const [boxOpen, setBoxOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isHidden, setIsHidden] = useState<boolean>(false);
   useEffect(() => {
     if (status === "open") {
-      BoxTriggerRef.current?.click();
+      setBoxOpen(true);
     }
   }, [status]);
 
@@ -34,31 +36,31 @@ export default function ConfirmationBox({
       setIsHidden(true);
     }, 200);
     try {
-      const { success } = await onConfirm(id);
-      if(!success) throw new Error("Something went wrong");
-      setIsHidden(false);
-      setTimeout(()=>{
-        BoxCloseRef.current?.click();
-      },50)
-      setIsLoading(false);
+      await onConfirm(id);
     } catch (error) {
       console.log(error);
-      BoxCloseRef.current?.click();
-      setIsLoading(false)
     }
+    setTimeout(() => {
+      setIsHidden(false);
+      setBoxOpen(false);
+      onCancel();
+      setIsLoading(false);
+    }, 50);
   }
   return (
     <Dialog
-      onOpenChange={(e) => {
-        if (!e) {
-          onCancel();
-          setIsLoading(false);
+      open={boxOpen}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          setBoxOpen(false);
+          onCancel()
           setIsHidden(false);
+          setIsLoading(false);
         }
       }}
     >
-      <DialogTrigger ref={BoxTriggerRef}></DialogTrigger>
       <DialogContent className="max-w-sm w-[calc(100%-16px)] rounded-lg p-10 flex flex-col gap-8 items-center">
+        <DialogTitle className="hidden">sdfsd</DialogTitle>
         <span className="w-[calc(100%-20px)] text-center">
           Are you sure to delete <strong>{itemName.slice(0, 25)}</strong> and
           all its history and data ?
@@ -75,7 +77,7 @@ export default function ConfirmationBox({
               "Yes"
             )}
           </Button>
-          <DialogClose ref={BoxCloseRef} asChild>
+          <DialogClose asChild>
             <Button
               variant="outline"
               className={`px-12 duration-200 w-full transition-all ease-linear scale-100 ${

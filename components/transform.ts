@@ -1,5 +1,10 @@
 import { JSONValue, Message } from "ai";
 
+export interface TransformedMessage extends Message {
+  data?: JSONValue;
+  isSaved?:boolean
+}
+
 export const isValidMessageData = (rawData: JSONValue | undefined) => {
   if (!rawData || typeof rawData !== "object") return false;
   if (Object.keys(rawData).length === 0) return false;
@@ -9,20 +14,12 @@ export const isValidMessageData = (rawData: JSONValue | undefined) => {
 export const insertDataIntoMessages = (
   messages: (Message & {isSaved?:boolean})[],
   data: JSONValue[] | undefined,
-  isSaved:boolean
-) => {
+  isSaved:boolean,
+  initMessage:Message
+):TransformedMessage[] => {
+  if (messages.length<1) return [initMessage];
   if (!data) return messages;
   let index=0
-  // messages.forEach((message, i) => {
-  //   const rawData = data[index];
-  //   if (isValidMessageData(rawData) && message.role!=='user'){
-  //     message.data = rawData;
-  //     index++
-  //   } 
-  //   else{
-  //     message.data={result:[]}
-  //   }
-  // });
   if(messages.length<1) return messages
   if(messages.at(-1)?.role==='assistant'){
     messages[messages.length-1].data=data.at(-1)

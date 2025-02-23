@@ -1,12 +1,38 @@
-import pdfParser, { Output } from "pdf2json";
-import { CleanData, cleanData } from "./dataCleaning";
+import * as MuPDF from "mupdf/mupdfjs";
+import { cleanData, CleanData } from "./dataCleaning";
 
+type Block = {
+  type: string | "text" | "image";
+  bbox: { x: number; y: number; w: number; h: number };
+  lines: Line[];
+};
+type Line = {
+  wmode: number;
+  bbox: { x: number; y: number; w: number; h: number };
+  text: string;
+  x: number;
+  y: number;
+  font: Font;
+};
+type Font = {
+  name: string;
+  size: number;
+  family: string;
+  weight: string | "normal" | "bold";
+  style: string | "normal" | "italic";
+};
 
-export function getCutOffSize(data: Output): number {
+function getCutOffSize(pdfDoc: MuPDF.PDFDocument): number {
   let fontSizes: { [key: number]: number } = {};
-  for (let page of data.Pages) {
-    for (let text of page.Texts) {
-      const size = text.R[0].TS[1];
+  for (let i = 0; i < pdfDoc.countPages(); i++) {
+    const page = new MuPDF.PDFPage(pdfDoc, i);
+    const { blocks } = JSON.parse(
+      page.toStructuredText("preserve-whitespace").asJSON()
+    ) as { blocks: Block[] }; // Extract text
+    const lines = blocks.flatMap((block) => block.lines);
+    for (let line of lines) {
+      if (line.text.trim() === "") continue;
+      const size = line.font.size;
       if (fontSizes[size]) {
         fontSizes[size]++;
       } else {
@@ -14,110 +40,129 @@ export function getCutOffSize(data: Output): number {
       }
     }
   }
-  let maxFontSize: [string, number] = ["0", 0];
-  for (let [key, value] of Object.entries(fontSizes)) {
-    if (value > maxFontSize[1]) {
-      maxFontSize[0] = key;
-      maxFontSize[1] = value;
+  let sortedFontSizes = Object.entries(fontSizes).sort(
+    (a, b) => parseFloat(a[0]) - parseFloat(b[0])
+  );
+  let contentFontSize = parseFloat(sortedFontSizes[0][0]);
+  const SIGNIFICANT_DIFFERENCE = 0.5; // Adjust this threshold as needed
+
+  for (let i = 1; i < sortedFontSizes.length; i++) {
+    let prevSize = parseFloat(sortedFontSizes[i - 1][0]);
+    let currentOccurrence = sortedFontSizes[i][1];
+    let prevOccurrence = sortedFontSizes[i - 1][1];
+
+    if (currentOccurrence < prevOccurrence * (1 - SIGNIFICANT_DIFFERENCE)) {
+      contentFontSize = prevSize;
+      break;
     }
   }
-  return parseFloat(maxFontSize[0]);
+
+  return contentFontSize;
+}
+
+function isHeader(
+  line: [Line | null, Line, Line | null],
+  cutOffFontsize: number
+) {
+  const [prevLine, currentLine, nextLine] = line;
+
+  const isLargeFont = (currentLine?.font?.size as number) >= cutOffFontsize;
+  const isSignficantLargeFont =
+    (currentLine?.font?.size as number) >= cutOffFontsize * 1.3;
+  const isBold = currentLine.font.weight === "bold";
+
+  // Check surrounding context
+  // Heuristic checks
+  const hasSpacingAbove = prevLine && currentLine.bbox.y - prevLine.y > 10;
+  const hasSpacingBelow = nextLine && nextLine.bbox.y - currentLine.y > 10;
+  const isIsolated = hasSpacingAbove || hasSpacingBelow;
+
+  if (isSignficantLargeFont || (isLargeFont && isBold && isIsolated)) {
+    return true;
+  }
+  return false;
 }
 
 export async function parsePDF(
   filename: string,
-  biData: Buffer
+  fileBuffer: Buffer
 ): Promise<{ filename: string; data: CleanData[] } | undefined> {
-  const pdfreader = new pdfParser();
-  const ThressholdWordCount=parseInt(process.env.THRESSHOLD_WORD_COUNT as string) ?? 100
   try {
-    const res: { filename: string; data: CleanData[] } = await new Promise(
-      (resolve, reject) => {
-        let result: { text: string; size: number }[] = [];
-        pdfreader.parseBuffer(biData);
-        pdfreader.on("pdfParser_dataError", (err) => {
-          reject(err);
-        });
-        pdfreader.on("pdfParser_dataReady", (data) => {
-          let sameheading = { text: "", size: 0 };
-          let prevheadY = 0;
-          let parsedJson: CleanData[] = [];
-          let lastTextSize = 0;
-          let content: CleanData = {
-            metadata: [],
-            text: "",
-          };
-          const cutOffFontsize = getCutOffSize(data);
-          for (let page of data.Pages) {
-            for (let text of page.Texts) {
-              const [face, size, bold, italic] = text.R[0].TS;
-              if (size > cutOffFontsize) {
-                const heading = decodeURIComponent(text.R[0].T);
-                if (lastTextSize < size) {
-                  content.metadata = result
-                    .filter(
-                      (item) =>
-                        !/^\d+$/.test(item.text) &&
-                        item.text.trim().length !== 0
-                    )
-                    .map((item) => item.text.replaceAll(/\s+/g, " "));
-                  parsedJson.push(content);
-                  while (
-                    result.length &&
-                    result[result.length - 1].size <= size
-                  ) {
-                    result.pop();
-                  }
-                  content = { metadata: [], text: "" };
-                }
-                if (text.y !== prevheadY && /^[A-Z0-9]/.test(heading)) {
-                  if (sameheading.text.length) {
-                    result.push(sameheading);
-                  }
-                  sameheading = { text: heading, size: size };
-                } else {
-                  sameheading.text += heading;
-                }
-                prevheadY = text.y;
-              } else {
-                if (sameheading.text.length) {
-                  result.push(sameheading);
-                  sameheading = { text: "", size: 0 };
-                }
-                content.text += decodeURIComponent(text.R[0].T);
-              }
-              lastTextSize = size;
-            }
-          }
-          if (content.text.length) {
-            content.metadata = result
-              .filter((item) => item.text.trim().length)
-              .map((item) => item.text.replaceAll(/\s+/g, " "));
-            result = [];
-            parsedJson.push(content);
-          }
-          parsedJson = parsedJson.filter((item) => item.text.trim().length > 0);
-          parsedJson = cleanData(parsedJson);
-          content={metadata: [], text: ""}
-          const filtered = parsedJson.reduce((acc:CleanData[], item,index) => {
-            const currentWordCount = content.text.split(" ").length;
-            if (currentWordCount > ThressholdWordCount) {
-              acc.push(content);
-              content=item
-              return acc
-            }
-            content.text += item.text + " ";
-            content.metadata=Array.from(new Set([...content.metadata,...item.metadata]));
-            if(index+1>=parsedJson.length){
-              acc.push(content)
-            }
-            return acc
-          },[]);
-          resolve({ filename, data: filtered });
-        });
-      }
+    const pdfDoc = MuPDF.PDFDocument.openDocument(
+      fileBuffer,
+      "application/pdf"
     );
-    return res;
+    let currentHeadings: { text: string; fontsize: number }[] = [];
+    let currentContent: string = "";
+    let result: CleanData[] = [];
+    const cutOffFontsize = getCutOffSize(pdfDoc);
+
+    for (let pageNum = 0; pageNum < pdfDoc.countPages(); pageNum++) {
+      const page = new MuPDF.PDFPage(pdfDoc, pageNum);
+      const textContent = JSON.parse(
+        page.toStructuredText("preserve-whitespace").asJSON()
+      ) as { blocks: Block[] }; // Extract text
+      const lines = textContent.blocks.flatMap((block) => block.lines);
+      let currentLine = null;
+      let prevLine = null;
+      let nextLine = null;
+      let index = 0;
+      do {
+        currentLine = lines[index];
+        if (currentLine.text.trim() === "") {
+          index++;
+          continue;
+        }
+        if (isHeader([prevLine, currentLine, nextLine], cutOffFontsize)) {
+          if (currentHeadings.length > 0) {
+            if (currentContent.trim() !== "") {
+              const pushedData = {
+                metadata: currentHeadings.map((item) => item.text),
+                text: currentContent.trim(),
+              };
+              result.push(pushedData);
+            }
+            currentContent = "";
+            let lastHeading = currentHeadings.pop() as {
+              text: string;
+              fontsize: number;
+            };
+            while (
+              currentHeadings.length > 0 &&
+              lastHeading.fontsize <= currentLine.font.size
+            ) {
+              lastHeading = currentHeadings.pop() as {
+                text: string;
+                fontsize: number;
+              };
+            }
+            currentHeadings.push(lastHeading);
+            currentHeadings.push({
+              text: currentLine.text.trim(),
+              fontsize: currentLine.font.size,
+            });
+          } else {
+            currentHeadings.push({
+              text: currentLine.text.trim(),
+              fontsize: currentLine.font.size,
+            });
+          }
+        } else {
+          currentContent += " " + currentLine.text;
+        }
+        prevLine = currentLine;
+        nextLine = lines[index + 1];
+        index++;
+      } while (index < lines.length);
+    }
+    if (currentContent.trim() !== "") {
+      result.push({
+        metadata: currentHeadings.map((item) => item.text),
+        text: currentContent.trim(),
+      });
+    }
+    result = cleanData(result);
+    return {filename,data:result};
   } catch (error) {
     console.log(error);
   }

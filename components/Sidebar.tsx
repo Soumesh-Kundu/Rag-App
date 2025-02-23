@@ -1,37 +1,39 @@
 "use client";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "./ui/collapsible";
+import Image from "next/image";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import { signOut, useSession } from "next-auth/react";
 import {
   FolderOpenIcon,
   PlusIcon,
   EllipsisVertical,
   Trash2,
   ChevronDownIcon,
-  DoorOpen,
   LogOut,
   Menu,
+  PencilIcon,
+  FolderClosed,
 } from "lucide-react";
-// import {ObjectId} from 'bson'
-import Image from "next/image";
+
 import { Button } from "./ui/button";
-import { useEffect, useRef, useState } from "react";
 import { Input } from "./ui/input";
-import { Dialog, DialogClose, DialogContent, DialogTrigger } from "./ui/dialog";
 import { Label } from "./ui/label";
-import Loader from "./Loader";
-import { useRouter, usePathname } from "next/navigation";
-import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
 import ConfirmationBox from "./ui/confirmation-box";
-import { useThreads } from "./Wrapper";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
+import Loader from "./Loader";
+import {  useRef, useState } from "react";
 import {
   TooltipProvider,
   Tooltip,
@@ -39,161 +41,160 @@ import {
   TooltipTrigger,
 } from "./ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { app } from "@/lib/db/realm";
-import { deleteNameSpace, removeCookie } from "@/app/_action";
 import { Skeleton } from "./ui/skeleton";
-import { Sheet, SheetClose, SheetContent, SheetTrigger } from "./ui/sheet";
-const inboxes = [
-  { id: "gmail", name: "Gmail", imgSrc: "/google.png" },
-  { id: "hotmail", name: "Outlook", imgSrc: "/outlook.webp" },
-  { id: "zoho", name: "Zoho", imgSrc: "/zoho-mail.png" },
-];
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "./ui/sheet";
+import { useThreads } from "./Wrapper";
 
-type RepoType = {
-  _id: string;
-  id: string;
-  userId: string;
-  name: string;
-  createdAt: string;
-  shared_access: {
-    user_id: string;
-    role: "Editor" | "Commenter" | "Read-Only";
-  };
-};
+import {
+  createRepo,
+  deleteRepo,
+  getOwnRepos,
+  renameRepo,
+} from "@/app/_action/repos";
+import { Role } from "@prisma/client";
+import { Thread } from "@/lib/types";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "./ui/accordion";
+import { useToast } from "@/hooks/use-toast";
+
 type SideBarPropos = {
-  ownRepos: {
-    repos: RepoType[];
-    isLoaded: boolean;
-  };
-  getOwnThreads: () => Promise<void>;
-  currentTab: string;
-  setCurrentTab: (id: string) => void;
-  sharedRepos: {
-    repos: RepoType[];
-    isLoaded: boolean;
-  };
-  getSharedThreads: () => Promise<void>;
-  userData: {
-    name: string;
-    picture: string;
+  useRepos: () => {
+    ownThreads: Thread[];
+    sharedThreads: Thread[];
+    setOwnThreads: React.Dispatch<React.SetStateAction<Thread[]>>;
+    setSharedThreads: React.Dispatch<React.SetStateAction<Thread[]>>;
   };
   closeSideBar?: () => void;
 };
 
-export function SidebarComponent({
-  ownRepos,
-  getOwnThreads,
-  currentTab,
-  setCurrentTab,
-  sharedRepos,
-  userData,
-  closeSideBar,
-}: SideBarPropos) {
+export function SidebarComponent({ useRepos, closeSideBar }: SideBarPropos) {
   const addRepoRef = useRef<HTMLButtonElement>(null);
-  const [addRepoName, setAddRepoName] = useState("");
-
+  const [repoData, setRepoData] = useState({ id: 0, name: "", isOpen: false });
   const [isLoading, setLoading] = useState(false);
   const [isDropdownOpen, setDropdownOpen] = useState(false);
-
   const [boxData, setBoxData] = useState({
     itemName: "",
     status: "closed",
-    id: "",
+    id: 0,
   });
+  const {toast}=useToast()
+  const { currentThread, setCurrentThread, clearUser } = useThreads();
+  const { ownThreads, sharedThreads, setOwnThreads } = useRepos();
 
+  const session = useSession();
   const router = useRouter();
   const pathname = usePathname();
 
-  async function createRepo(e: React.FormEvent<HTMLFormElement>) {
+  function clearRepoData() {
+    setRepoData({ id: 0, name: "", isOpen: false });
+  }
+  async function handlerRepo(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if(!repoData.name.trim()) return
     if (isLoading) return;
     setLoading(true);
-    const mongo = app?.currentUser
-      ?.mongoClient("mongodb-atlas")
-      .db("private-gpt");
     try {
-      await mongo?.collection("threads").insertOne({
-        name: addRepoName,
-        userId: app.currentUser?.id,
-        createdAt: new Date().toISOString(),
-        shared_access: [],
-      });
-      await getOwnThreads();
-      addRepoRef?.current?.click();
-    } catch (error) {}
-    setLoading(false);
-    setAddRepoName("");
-  }
-  async function deleteRepo(id: string) {
-    const mongo = app?.currentUser
-      ?.mongoClient("mongodb-atlas")
-      .db("private-gpt");
-    try {
-      const threadPromise = mongo?.collection("threads").deleteOne({
-        $and: [
-          { _id: { $oid: id } },
-          { userId: app?.currentUser?.id as string },
-        ],
-      });
-      await Promise.all([threadPromise, deleteNameSpace(id)]);
-      if (pathname.includes(id)) {
-        router.push("/");
+      let res;
+      if (!repoData.id) {
+        res = await createRepo(repoData.name);
+      } else {
+        res = await renameRepo(repoData.id, repoData.name);
       }
-      await getOwnThreads();
-      return { success: true };
+      if (res.status) {
+        const newThreads = await getOwnRepos();
+        setOwnThreads(newThreads);
+      }
+      addRepoRef.current?.click();
     } catch (error) {
-      console.log(id);
-      return { success: false };
+      console.log(error);
+      toast({variant:"destructive",title:"Oops!!",description:"Please try again later"})
+    }
+    setLoading(false);
+    clearRepoData();
+  }
+  async function handleDeleteRepo(id: number) {
+    if(ownThreads.length===1){
+      toast({variant:"destructive",description:"Last Repository cannot be deleted"})
+      return
+    } 
+    try {
+      const res = await deleteRepo(id);
+      if (res.status) {
+        if(currentThread?.id===id){
+          const thread=ownThreads.find((thread)=>thread.id!==id) as Thread
+          setCurrentThread(thread)
+          router.push(`/${thread.nameSpace}/query`)
+        }
+        const newThreads = await getOwnRepos();
+        setOwnThreads(newThreads);
+      }
+    } catch (error) {
+      console.log(error);
+      toast({variant:"destructive",title:"Oops!!",description:"Please try again later"})
     }
   }
 
-  function openConfirmBox(itemName: string, id: string) {
+  function openConfirmBox(itemName: string, id: number) {
     setBoxData({ itemName, id, status: "open" });
   }
   function closeConfirmBox() {
-    setBoxData({ itemName: "", id: "", status: "closed" });
+    setBoxData({ itemName: "", id: NaN, status: "closed" });
   }
+
   return (
     <TooltipProvider>
       <aside className="sidebar shadow-sm bg-white/40 text-sm 2xl:text-base pb-3  w-full h-screen scrollbar overflow-hidden flex flex-col">
-        <nav className="flex flex-col gap-4  mb-5 scrollbar overflow-y-auto  flex-grow py-4 w-full">
-          <div className="flex flex-col gap-4">
+        <nav className="flex flex-col gap-4  mb-5 scrollbar overflow-y-auto  flex-grow py-4 w-full scrollbar">
+          <div className="flex flex-col gap-4 scrollbar">
             <div className="px-6">
               <h2 className="font-bold text-xl 2xl:text-2xl">Repositories</h2>
             </div>
-            {ownRepos.isLoaded ? (
+            {ownThreads ? (
               <>
-                {ownRepos.repos.length > 0 ? (
-                  <ul className="flex flex-col gap-2 w-full whitespace-nowrap pl-2">
-                    {ownRepos?.repos.map((repo) => (
-                      <Collapsible key={repo.id} open={currentTab === repo.id}>
-                        <li
-                          key={repo.id}
-                          className={`flex gap-3 items-center justify-between py-1 pl-4 pr-2 rounded-l-full cursor-pointer hover:bg-ui-600 group hover:text-secondary font-medium transition-all ${
-                            pathname.includes(repo.id) &&
+                {ownThreads.length > 0 ? (
+                  <Accordion
+                    type="single"
+                    collapsible
+                    value={currentThread?.nameSpace ?? ""}
+                  >
+                    {/* <ul className="flex flex-col gap-2 w-full whitespace-nowrap pl-2"> */}
+
+                    {ownThreads.map((repo) => (
+                      <AccordionItem key={repo.id} value={repo.nameSpace}>
+                        <div
+                          className={`flex items-center ml-4 mb-1  pl-3 px-1 py-1 rounded-l-full hover:text-secondary group hover:bg-ui-600 ${
+                            currentThread?.id === repo.id &&
                             "bg-ui-600 text-secondary"
                           }`}
                         >
-                          <CollapsibleTrigger asChild>
+                          <AccordionTrigger
+                            onClick={() => {
+                              setCurrentThread(repo);
+                              router.push(`/${repo.nameSpace}/query`);
+                              if (closeSideBar) {
+                                closeSideBar();
+                              }
+                            }}
+                            className="flex-grow w-full"
+                          >
                             <Tooltip>
-                              <TooltipTrigger
-                                onClick={() => {
-                                  setCurrentTab(repo.id);
-                                  if (closeSideBar) {
-                                    closeSideBar();
-                                  }
-                                }}
-                                asChild
-                              >
-                                <Link
-                                  href={`/${repo.id}/query`}
-                                  replace={pathname === "/"}
-                                  className="flex flex-grow items-center gap-3 "
-                                >
-                                  <FolderOpenIcon className="h-6 w-6 " />
+                              <TooltipTrigger asChild>
+                                <div className="flex flex-grow items-center gap-3 ">
+                                  {currentThread?.id===repo.id?<FolderOpenIcon className="h-6 w-6 " />:
+                                  <FolderClosed className="h-6 w-6 " />}
                                   {repo.name.slice(0, 14)}
                                   {repo.name.length > 14 && " ..."}
-                                </Link>
+                                </div>
                               </TooltipTrigger>
                               {repo.name.length > 14 && (
                                 <TooltipContent side="bottom">
@@ -201,18 +202,32 @@ export function SidebarComponent({
                                 </TooltipContent>
                               )}
                             </Tooltip>
-                          </CollapsibleTrigger>
+                          </AccordionTrigger>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button
                                 className={`!bg-transparent focus:!border-none focus:!outline-none focus:!ring-0 p-2 w-9 h-9 text-primary hover:!bg-ui-700 group-hover:text-secondary ${
-                                  pathname.includes(repo.id) && "text-secondary"
+                                  currentThread?.id === repo.id &&
+                                  "text-secondary"
                                 }`}
                               >
                                 <EllipsisVertical size={25} />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setRepoData({
+                                    id: repo.id,
+                                    name: repo.name,
+                                    isOpen: true,
+                                  });
+                                }}
+                              >
+                                <button className="cursor-pointer  flex items-center gap-2 font-semibold">
+                                  <PencilIcon size={18} /> Edit
+                                </button>
+                              </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => {
                                   openConfirmBox(repo.name, repo.id);
@@ -224,34 +239,43 @@ export function SidebarComponent({
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </li>
-                        <CollapsibleContent className="flex  gap-4 pl-8 ">
-                          <div className="flex flex-col gap-2 border-l-2 py-1 border-gray-300 pl-2 font-medium  w-full">
-                            <Link
-                              href={`/${repo.id}/query`}
-                              replace={pathname === "/"}
-                              className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-ui-800 hover:text-secondary font-medium transition-all ${
-                                pathname.includes(`${repo.id}/query`) &&
-                                "bg-ui-800 text-secondary"
+                        </div>
+                        <AccordionContent className="flex  gap-4 pl-8">
+                          <div className="flex flex-col gap-2 border-l-2 py-1  border-gray-300 pl-2 font-medium  w-full">
+                            <button
+                              onClick={() => {
+                                router.push(`/${repo.nameSpace}/query`);
+                                if (closeSideBar) {
+                                  closeSideBar();
+                                }
+                              }}
+                              className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-ui-700 hover:text-secondary font-medium transition-all ${
+                                pathname.includes(`${repo.nameSpace}/query`) &&
+                                "bg-ui-700 text-secondary"
                               }`}
                             >
                               Query
-                            </Link>
-                            <Link
-                              href={`/${repo.id}/history`}
-                              replace={pathname === "/"}
-                              className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-ui-800 hover:text-secondary font-medium transition-all ${
-                                pathname.includes(`${repo.id}/history`) &&
-                                "bg-ui-800 text-secondary"
+                            </button>
+                            <button
+                              onClick={() => {
+                                router.push(`/${repo.nameSpace}/history`);
+                                if (closeSideBar) {
+                                  closeSideBar();
+                                }
+                              }}
+                              className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-ui-700 hover:text-secondary font-medium transition-all ${
+                                pathname.includes(
+                                  `${repo.nameSpace}/history`
+                                ) && "bg-ui-700 text-secondary"
                               }`}
                             >
                               History
-                            </Link>
+                            </button>
                           </div>
-                        </CollapsibleContent>
-                      </Collapsible>
+                        </AccordionContent>
+                      </AccordionItem>
                     ))}
-                  </ul>
+                  </Accordion>
                 ) : (
                   <>
                     <span className="px-9 font-semibold text-gray-500 ">
@@ -276,30 +300,50 @@ export function SidebarComponent({
                 ))}
               </>
             )}
-            {ownRepos.isLoaded && (
-              <Dialog>
+            {ownThreads && (
+              <Dialog
+                open={repoData.isOpen}
+                onOpenChange={(e) => {
+                  if (!e) {
+                    setRepoData((prev) => ({ ...prev, isOpen: false }));
+                  }
+                }}
+              >
                 <DialogTrigger asChild>
-                  <Button className="flex gap-3 justify-start items-center py-2 px-4 mr-2 rounded-full cursor-pointer hover:!bg-black/10 !bg-transparent text-black hover:text-primary font-medium transition-all">
+                  <Button
+                    onClick={() => {
+                      setRepoData({ id: 0, name: "", isOpen: true });
+                    }}
+                    className="flex gap-3 justify-start items-center py-2 px-4 mx-1 rounded-full cursor-pointer hover:!bg-black/10 !bg-transparent text-black hover:text-primary font-medium transition-all"
+                  >
                     <PlusIcon className="h-6 w-6 " />
                     Add new
                   </Button>
                 </DialogTrigger>
                 <DialogContent className=" p-5 pt-8 max-w-sm w-[calc(100%-16px)] rounded-lg">
-                  <form onSubmit={createRepo} className="flex flex-col gap-4">
+                  <DialogTitle className="hidden">Create Repo</DialogTitle>
+                  <form onSubmit={handlerRepo} className="flex flex-col gap-4">
                     <Label className="text-lg font-semibold">
                       Repository Name:
                     </Label>
                     <Input
-                      value={addRepoName}
-                      onChange={(e) => setAddRepoName(e.target.value)}
+                      value={repoData.name}
+                      name=""
+                      autoFocus
+                      onChange={(e) =>
+                        setRepoData((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
                       type="text"
                     />
-                    <Button type="submit">
+                    <Button type="submit" className="!bg-ui-600">
                       {isLoading ? (
                         <Loader stroke={1.3} color="white" />
-                      ) : (
-                        "create"
-                      )}
+                      ) : 
+                       ( !repoData.id ? "Create":"Update")
+                      }
                     </Button>
                   </form>
                   <DialogClose ref={addRepoRef} className="hidden" />
@@ -309,24 +353,27 @@ export function SidebarComponent({
             <div className="px-6">
               <h2 className="font-bold text-xl 2xl:text-2xl">Shared</h2>
             </div>
-            {sharedRepos.isLoaded ? (
+            {sharedThreads ? (
               <>
-                {sharedRepos?.repos.length > 0 ? (
-                  <ul className="flex flex-col gap-2 w-full whitespace-nowrap pl-2">
-                    {sharedRepos?.repos.map((repo) => (
-                      <Collapsible key={repo.id} open={currentTab === repo.id}>
-                        <li
-                          key={repo.id}
-                          className={`flex gap-3 items-center justify-between py-3 pl-4 pr-2 rounded-l-full cursor-pointer hover:bg-ui-600 group hover:text-secondary font-medium transition-all ${
-                            pathname.includes(repo.id) &&
+                {sharedThreads.length > 0 ? (
+                  <Accordion
+                    type="single"
+                    collapsible
+                    value={currentThread?.nameSpace ?? ""}
+                  >
+                    {sharedThreads.map((repo) => (
+                      <AccordionItem key={repo.id} value={repo.nameSpace}>
+                        <div
+                          className={`flex items-center ml-4 mb-1  pl-3 px-1 h-12 rounded-l-full hover:text-secondary group hover:bg-ui-600 ${
+                            currentThread?.id === repo.id &&
                             "bg-ui-600 text-secondary"
                           }`}
                         >
-                          <CollapsibleTrigger asChild>
+                          <AccordionTrigger asChild>
                             <Tooltip>
                               <TooltipTrigger
                                 onClick={() => {
-                                  setCurrentTab(repo.id);
+                                  setCurrentThread(repo);
                                   if (closeSideBar) {
                                     closeSideBar();
                                   }
@@ -335,9 +382,9 @@ export function SidebarComponent({
                               >
                                 <Link
                                   href={
-                                    repo.shared_access.role !== "Commenter"
-                                      ? `/${repo.id}/query`
-                                      : `/${repo.id}/history`
+                                    repo.role !== Role.commentor
+                                      ? `/${repo.nameSpace}/query`
+                                      : `/${repo.nameSpace}/history`
                                   }
                                   replace={pathname === "/"}
                                   className="flex flex-grow items-center gap-3 "
@@ -353,37 +400,49 @@ export function SidebarComponent({
                                 </TooltipContent>
                               )}
                             </Tooltip>
-                          </CollapsibleTrigger>
-                        </li>
-                        <CollapsibleContent className="flex  gap-4 pl-8 ">
+                          </AccordionTrigger>
+                        </div>
+                        <AccordionContent className="flex  gap-4 pl-8 ">
                           <div className="flex flex-col gap-2 border-l-2 py-1 border-gray-300 pl-2 font-medium  w-full">
-                            {repo.shared_access?.role !== "Commenter" && (
+                            {repo.role !== Role.commentor && (
                               <Link
-                                href={`/${repo.id}/query`}
+                                href={`/${repo.nameSpace}/query`}
                                 replace={pathname === "/"}
-                                className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-ui-800 hover:text-secondary font-medium transition-all ${
-                                  pathname.includes(`${repo.id}/query`) &&
-                                  "bg-ui-800 text-secondary"
+                                className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-ui-700 hover:text-secondary font-medium transition-all ${
+                                  pathname.includes(
+                                    `${repo.nameSpace}/query`
+                                  ) && "bg-ui-700 text-secondary"
                                 }`}
+                                onClick={()=>{
+                                  if (closeSideBar) {
+                                    closeSideBar();
+                                  }
+                                }}
                               >
                                 Query
                               </Link>
                             )}
                             <Link
-                              href={`/${repo.id}/history`}
+                              href={`/${repo.nameSpace}/history`}
                               replace={pathname === "/"}
-                              className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-ui-800 hover:text-secondary font-medium transition-all ${
-                                pathname.includes(`${repo.id}/history`) &&
-                                "bg-ui-800 text-secondary"
+                              className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-ui-700 hover:text-secondary font-medium transition-all ${
+                                pathname.includes(
+                                  `${repo.nameSpace}/history`
+                                ) && "bg-ui-700 text-secondary"
                               }`}
+                              onClick={()=>{
+                                if (closeSideBar) {
+                                  closeSideBar();
+                                }
+                              }}
                             >
                               History
                             </Link>
                           </div>
-                        </CollapsibleContent>
-                      </Collapsible>
+                        </AccordionContent>
+                      </AccordionItem>
                     ))}
-                  </ul>
+                  </Accordion>
                 ) : (
                   <span className="px-9 font-semibold text-gray-500 ">
                     No shared repositories
@@ -407,77 +466,6 @@ export function SidebarComponent({
               </>
             )}
           </div>
-          <div className="flex flex-col gap-4">
-            <div className="px-6">
-              <h2 className="font-bold text-xl 2xl:text-2xl">Inbox</h2>
-            </div>
-            <ul className="flex flex-col gap-2 w-full whitespace-nowrap pl-2">
-              {inboxes.map((inbox) => (
-                <Collapsible key={inbox.id} open={currentTab === inbox.id}>
-                  <li
-                    key={inbox.id}
-                    className={`flex gap-3 items-center py-1 px-4 rounded-l-full cursor-pointer hover:bg-ui-600 group hover:text-secondary font-medium transition-all ${
-                      pathname.includes(inbox.id) && "bg-ui-600 text-secondary"
-                    }`}
-                  >
-                    {" "}
-                    <CollapsibleTrigger
-                      onClick={() => {
-                        setCurrentTab(inbox.id);
-                        if (closeSideBar) {
-                          closeSideBar();
-                        }
-                      }}
-                      asChild
-                    >
-                      <Link
-                        href={`/${inbox.id}/query`}
-                        replace={pathname === "/"}
-                        className="flex flex-grow items-center gap-3 p-2"
-                      >
-                        <Image
-                          src={inbox.imgSrc}
-                          alt="Uploaded image"
-                          width={20}
-                          height={20}
-                        />
-                        {inbox.name}
-                      </Link>
-                    </CollapsibleTrigger>
-                  </li>
-                  <CollapsibleContent className="flex  gap-4 pl-8 ">
-                    <div className="flex flex-col gap-2 border-l-2 py-1 border-gray-300 pl-2 font-medium  w-full">
-                      <Link
-                        href={`/${inbox.id}/query`}
-                        replace={pathname === "/"}
-                        className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-ui-800 hover:text-secondary font-medium transition-all ${
-                          pathname.includes(`${inbox.id}/query`) &&
-                          "bg-ui-800 text-secondary"
-                        }`}
-                      >
-                        Query
-                      </Link>
-                      <Link
-                        href={`/${inbox.id}/history`}
-                        replace={pathname === "/"}
-                        className={`flex gap-3 items-center py-2 px-4 rounded-l-full cursor-pointer hover:bg-ui-800 hover:text-secondary font-medium transition-all ${
-                          pathname.includes(`${inbox.id}/history`) &&
-                          "bg-ui-800 text-secondary"
-                        }`}
-                      >
-                        History
-                      </Link>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              ))}
-              <li className="flex gap-3 items-center py-2 px-4 mr-2 rounded-full cursor-pointer hover:bg-black/10  hover:text-primary font-medium transition-all">
-                <PlusIcon className="h-6 w-6 " />
-                Add new
-              </li>
-              {/* Add more links as needed */}
-            </ul>
-          </div>
         </nav>
         <Popover
           onOpenChange={(e) => {
@@ -487,31 +475,25 @@ export function SidebarComponent({
           <PopoverTrigger asChild>
             <div className=" bg-ui-500 rounded-lg flex items-center mx-2 cursor-pointer p-2">
               <div className="flex items-center gap-3 flex-grow">
-                {userData.name.length > 0 ? (
+                {session?.data ? (
                   <>
                     <div className="rounded-full overflow-hidden">
                       <Image
-                        src={
-                          userData?.picture?.length !== 0
-                            ? userData.picture
-                            : "/profile.png"
-                        }
+                        src={session.data?.user?.image || "/profile.png"}
                         alt="Uploaded image"
                         width={40}
                         height={40}
                       />
                     </div>
                     <span className="font-semibold text-white">
-                      {userData.name}
+                      {session?.data?.user.name}
                     </span>
                   </>
                 ) : (
                   <>
                     <Skeleton className="!bg-slate-100 rounded-full w-10 h-10" />
                     <div className="flex flex-col gap-1 flex-grow">
-                      <img width={1} height={1} />
                       <Skeleton className="!bg-slate-100 h-3 w-4/5" />
-                      <Skeleton className="!bg-slate-100 h-2 w-3/5" />
                     </div>
                   </>
                 )}
@@ -533,12 +515,12 @@ export function SidebarComponent({
           >
             <Button
               onClick={async () => {
-                await removeCookie();
-                await app?.currentUser?.logOut();
+                await signOut();
+                clearUser();
                 router.replace("/login");
               }}
               variant="ghost"
-              className="!bg-ui-700/60 !text-white hover:!bg-ui-600/60 !outline-none !border-none !ring-0 flex items-center justify-between py-2 px-4  w-full"
+              className="!bg-ui-500/80 !text-white hover:!bg-ui-600/80 !outline-none !border-none !ring-0 flex items-center justify-between py-2 px-4  w-full"
             >
               <span className="font-semibold">Log Out</span>
               <LogOut size={22} />
@@ -547,7 +529,7 @@ export function SidebarComponent({
         </Popover>
       </aside>
       <ConfirmationBox
-        onConfirm={deleteRepo}
+        onConfirm={handleDeleteRepo}
         onCancel={closeConfirmBox}
         {...boxData}
       />
@@ -555,140 +537,41 @@ export function SidebarComponent({
   );
 }
 
-export default function Sidebar() {
-  const [currentTab, setCurrentTab] = useState("");
-  const router = useRouter();
+export default function Sidebar({
+  ownRepos,
+  sharedRepos,
+}: {
+  ownRepos: Thread[];
+  sharedRepos: Thread[];
+}) {
   const CloseSideBarRef = useRef<HTMLButtonElement | null>(null);
-  const [userData, setUsername] = useState({ name: "", picture: "" });
-  const [ownRepos, setOwnRepos] = useState<{
-    repos: RepoType[];
-    isLoaded: boolean;
-  }>({ repos: [], isLoaded: false });
-  const [sharedRepos, setSharedRepos] = useState<{
-    repos: RepoType[];
-    isLoaded: boolean;
-  }>({ repos: [], isLoaded: false });
-  const { setRepos } = useThreads();
-
-  useEffect(() => {
-    setUsername({
-      name: app.currentUser?.customData.name as string,
-      picture: app.currentUser?.customData.picture as string,
-    });
-    getOwnThreads();
-    getSharedThreads();
-    console.log("mounted");
-    console.log("unmounted");
-  }, []);
-
-  useEffect(() => {
-    setRepos([
-      ...ownRepos.repos,
-      ...sharedRepos.repos,
-      ...inboxes.map((inbox) => ({ id: inbox.id, name: inbox.name })),
-    ]);
-  }, [ownRepos, sharedRepos]);
-  useEffect(() => {
-    if (ownRepos.isLoaded && ownRepos.repos.length > 0) {
-      const id = ownRepos.repos[0].id;
-      setCurrentTab(id);
-      router.push(`/${id}/query`);
-    }
-    if (sharedRepos.isLoaded && sharedRepos.repos.length > 0) {
-      const id = sharedRepos.repos[0].id;
-      setCurrentTab(id);
-      if (sharedRepos.repos[0]?.shared_access.role === "Commenter") {
-        router.push(`/${id}/history`);
-      } else {
-        router.push(`/${id}/query`);
-      }
-    }
-  }, [ownRepos.isLoaded, sharedRepos.isLoaded]);
-
+  const [ownThreads, setOwnThreads] = useState<Thread[]>(ownRepos);
+  const [sharedThreads, setSharedThreads] = useState<Thread[]>(sharedRepos);
+  function useRepos() {
+    return { ownThreads, sharedThreads, setOwnThreads, setSharedThreads };
+  }
   function closeSideBar() {
     CloseSideBarRef.current?.click();
   }
 
-  async function getOwnThreads() {
-    const mongo = app?.currentUser
-      ?.mongoClient("mongodb-atlas")
-      .db("private-gpt");
-    const repos = (await mongo?.collection("threads").find(
-      { userId: app.currentUser?.id },
-      {
-        projection: {
-          id: { $toString: "$_id" },
-          name: 1,
-          createdAt: 1,
-          userId: 1,
-        },
-      }
-    )) as RepoType[];
-    setOwnRepos({ repos, isLoaded: true });
-  }
-  async function getSharedThreads() {
-    const mongo = app?.currentUser
-      ?.mongoClient("mongodb-atlas")
-      .db("private-gpt");
-    const repos = (await mongo?.collection("threads").aggregate([
-      {
-        $match: {
-          shared_access: { $elemMatch: { userId: app?.currentUser?.id } },
-        },
-      },
-      {
-        $project: {
-          id: { $toString: "$_id" },
-          name: 1,
-          createdAt: 1,
-          userId: 1,
-          shared_access: {
-            $filter: {
-              input: "$shared_access",
-              as: "access",
-              cond: { $eq: ["$$access.userId", app?.currentUser?.id] },
-            },
-          },
-        },
-      },
-      { $unwind: "$shared_access" },
-    ])) as RepoType[];
-    setSharedRepos({ repos, isLoaded: true });
-  }
   return (
     <>
       <div className="lg:hidden">
         <Sheet>
           <SheetTrigger asChild>
-            <Button className="duration-500 transition-all   !w-10 !h-10 !p-0 object-contain fixed top-2 left-2  rounded-full  grid place-items-center">
+            <Button className="duration-500 transition-all bg-ui-600  !w-10 !h-10 !p-0 object-contain fixed top-2 left-2  rounded-full  grid place-items-center">
               <Menu strokeWidth={1.9} color="white" size={20} />
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="p-0 w-60 ">
+            <SheetTitle className="hidden">sidebar</SheetTitle>
             <SheetClose ref={CloseSideBarRef} className="hidden"></SheetClose>
-            <SidebarComponent
-              getOwnThreads={getOwnThreads}
-              getSharedThreads={getSharedThreads}
-              ownRepos={ownRepos}
-              sharedRepos={sharedRepos}
-              currentTab={currentTab}
-              setCurrentTab={setCurrentTab}
-              userData={userData}
-              closeSideBar={closeSideBar}
-            />
+            <SidebarComponent useRepos={useRepos} closeSideBar={closeSideBar} />
           </SheetContent>
         </Sheet>
       </div>
       <div className="hidden lg:block min-w-60 ">
-        <SidebarComponent
-          getOwnThreads={getOwnThreads}
-          getSharedThreads={getSharedThreads}
-          ownRepos={ownRepos}
-          sharedRepos={sharedRepos}
-          currentTab={currentTab}
-          setCurrentTab={setCurrentTab}
-          userData={userData}
-        />
+        <SidebarComponent useRepos={useRepos} />
       </div>
     </>
   );

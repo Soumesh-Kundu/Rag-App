@@ -2,7 +2,6 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import Loader from "./Loader";
 import { useEffect, useState } from "react";
-import { realmConfirmUser } from "@/lib/db/realm";
 import { CheckCircle2 } from "lucide-react";
 import { UI_colors } from "@/color.config";
 import { Button } from "./ui/button";
@@ -12,11 +11,10 @@ type Props = {
   message: string;
 };
 export default function ConfirmEmail({ verified, message }: Props) {
-  const [isConfirmed, setIsConfirmed] = useState(verified);
   const router=useRouter()
   return (
     <>
-      {!isConfirmed ? (
+      {!verified? (
         <div className="bg-white  dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg shadow-lg  sm:p-6 flex flex-col w-full sm:max-w-sm 2xl:max-w-md !p-10 gap-10 items-center">
           <Loader size={40} stroke={2.3} color={UI_colors[500]} />
           <p className="text-gray-500 font-semibold">{message}</p>

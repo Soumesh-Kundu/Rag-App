@@ -1,64 +1,47 @@
 "use client";
-import { usePathname } from "next/navigation";
+import { AccessUsers, Thread } from "@/lib/types";
+import { Role } from "@prisma/client";
+import { Session } from "next-auth";
+import { useSession } from "next-auth/react";
 import React, { useEffect, createContext, useState, useContext } from "react";
-// import { dotWave } from "ldrs";
-// dotWave.register()
-type Thread = {
-  id: string;
-  userId?:string,
-  name: string;
-  createdAt?:string;
-  shared_access?:{
-    userId:string,
-    role:"Editor"|"Commenter"|"Read-Only"
-  }
-};
 
 type ContextProps = {
-  threads: Thread[];
-  setRepos: (threads: Thread[]) => void;
+  currentThread: Thread | null;
+  setCurrentThread: React.Dispatch<React.SetStateAction<Thread | null>>;
+  currentUser: Session | null;
+  clearUser: () => void;
+  sharedUsers: AccessUsers;  
+  setSharedUsers: React.Dispatch<React.SetStateAction<AccessUsers>>;
 };
 const ThreadsContext = createContext<ContextProps>({
-  threads: [],
-  setRepos: (threads: Thread[]) => {},
+  currentThread: { id: 0, name: "", role: Role.owner, nameSpace: "" },
+  setCurrentThread: () => {},
+  currentUser: null,
+  clearUser: () => {},
+  setSharedUsers:()=>{},
+  sharedUsers:[]
 });
-const unAuthorizedRoutes=[
-  'login',
-  'signup',
-  'reset-password',
-  'forgot-password',
-  'callback',
-  'accept-invite',
-  'verify',
-  'test'
-]
-export default function Wrapper({
-  children,
-  Sidebar,
-}: {
-  children: React.ReactNode;
-  Sidebar: React.ReactNode;
-}) {
-  const [threads, setThreads] = useState<Thread[]>([]);
-  const pathname=usePathname()
-  function setRepos(repos: Thread[]) {
-    setThreads(repos);
+export default function Wrapper({ children }: { children: React.ReactNode }) {
+  const [currentThread, setCurrentThread] = useState<Thread | null>(null);
+  const session = useSession();
+  const [currentUser, setCurrentUser] = useState(session.data);
+  const [sharedUsers, setSharedUsers] = useState<AccessUsers>({});
+
+  function clearUser() {
+    setCurrentUser(null);
   }
+
+  
   useEffect(() => {
-    async function registerLoaders() {
-      const { dotWave, ring } = await import("ldrs");
-      dotWave.register();
-      ring.register();
-    }
-    registerLoaders();
-  }, []);
+    setCurrentUser(session.data);
+  }, [session.data]);
+
   return (
     <>
-      <ThreadsContext.Provider value={{ threads, setRepos }}>
-        {!new RegExp(unAuthorizedRoutes.join("|")).test(pathname) && Sidebar}
-        <div className="gap-10 grid place-items-center w-full h-screen overflow-hidden  scrollbar">
-          {children}
-        </div>
+      <ThreadsContext.Provider
+        value={{ currentUser, clearUser, currentThread, setCurrentThread,setSharedUsers,sharedUsers }}
+      >
+        {children}
       </ThreadsContext.Provider>
     </>
   );

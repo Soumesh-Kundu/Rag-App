@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Loader from "./Loader";
 import { Button } from "./ui/button";
-import { FormEvent, useState } from "react";
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -15,11 +15,11 @@ import {
   FormMessage,
 } from "./ui/form";
 import { Input } from "./ui/input";
-import { CheckCircle2 } from "lucide-react";
-import { googlelogin, registerEmailPassword, serverUser } from "@/lib/db/realm";
-import { addUser } from "@/app/_action";
-import { useRouter } from "next/navigation";
+import { CheckCircle2, EyeIcon, EyeOffIcon } from "lucide-react";
 import { registerUser } from "@/app/_action/auth";
+import { signIn } from "next-auth/react";
+import { useToast } from "@/hooks/use-toast";
+import Image from "next/image";
 
 const formSchema = z.object({
   name: z.string().min(1, {
@@ -39,35 +39,41 @@ const formSchema = z.object({
 export default function SignInForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showPassword,setShowPassword] = useState(false);
+
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name:"",
+      name: "",
       email: "",
       password: "",
     },
   });
-  const router=useRouter()
   async function googleLogin() {
-    try {
-      const user=await googlelogin()
-      if(!user){
-        console.log("google auth error")
-        return
-      }
-      router.replace("/");
-    } catch (error) {
-      console.log(error)
-    }
+    await signIn("google", { redirect: true, callbackUrl: "/" });
   }
   async function onSignupSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const sucess=await registerUser(values)
-      setIsLoggedIn(sucess);
+      const { success, message } = await registerUser(values);
+      if (success === 409) {
+        toast({
+          variant: "destructive",
+          title: message,
+        });
+      }
+      if (success === 200) {
+        setIsLoggedIn(true);
+      }
     } catch (error) {
       console.log(error);
+      toast({
+        variant: "destructive",
+        title: "Some error occured!",
+        description: "Please try again later",
+      });
       setIsLoggedIn(false);
     }
     setIsLoading(false);
@@ -119,11 +125,21 @@ export default function SignInForm() {
                     <FormItem className=" ">
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="*******"
-                          type="password"
-                          {...field}
-                        />
+                        <div className="relative">
+                          <Input
+                            placeholder="*******"
+                            type={showPassword ? "text" : "password"}
+                            className="!pr-10"
+                            {...field}
+                          />
+                          <button
+                            className="absolute duration-200 text-ui-600 right-2 top-2"
+                            type="button"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                          >
+                            {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                          </button>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -139,8 +155,8 @@ export default function SignInForm() {
                     Log In
                   </Link>
                 </p>
-                <Button type="submit">
-                  {isLoading ? <Loader /> : "Sign in"}
+                <Button type="submit" className="!bg-ui-600 !text-white">
+                  {isLoading ? <Loader color="white" /> : "Sign Up"}
                 </Button>
               </form>
             </Form>
@@ -150,29 +166,20 @@ export default function SignInForm() {
               <p className="border-t w-full"></p>
             </div>
             <div className="grid grid-cols-3 gap-2  ">
-              <Button variant="outline" onClick={googleLogin} type="button">
-                <img src="/google.png" alt="Google Logo" width="24" />
-              </Button>
               <Button
-                variant="outline"
+                variant="secondary"
+                className="col-span-3 border-gray-300 border !rounded-md"
+                onClick={googleLogin}
                 type="button"
-                className="!bg-blue-500 hover:!bg-blue-600"
               >
-                <img src="/facebook.png" alt="Google Logo" width="30" />
-              </Button>
-              <Button type="button">
-                <img src="/github.png" alt="Google Logo" width="30" />
+                <Image src="/google.png" alt="Google Logo" width={24} />
               </Button>
             </div>
           </div>
         </div>
       ) : (
         <div className="bg-white  dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg shadow-lg  sm:p-6 flex flex-col w-full sm:max-w-sm 2xl:max-w-md !p-10 gap-5 items-center">
-          <CheckCircle2
-            size={40}
-            strokeWidth={1.9}
-            className="text-ui-500"
-          />
+          <CheckCircle2 size={40} strokeWidth={1.9} className="text-ui-500" />
           <p className="text-gray-500 font-semibold">
             A Verfication Email has sent to you
           </p>
