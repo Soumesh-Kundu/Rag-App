@@ -81,9 +81,9 @@ export default function SignInForm() {
   return (
     <>
       {!isLoggedIn ? (
-        <div className="flex flex-col gap-8 px-6 py-8 w-full items-center justify-center">
+        <div className="flex flex-col gap-8 px-6  w-full items-center justify-center">
           <div className="bg-white  dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg shadow-lg p-4 sm:p-6 flex flex-col w-full sm:max-w-sm 2xl:max-w-md">
-            <h1 className="md:text-3xl text-2xl font-extrabold leading-tight tracking-wide text-gray-900 dark:text-white mb-4">
+            <h1 className="md:text-3xl text-2xl font-extrabold leading-tight tracking-wide text-gray-900 dark:text-white mb-2">
               Get Started
             </h1>
 
@@ -172,7 +172,7 @@ export default function SignInForm() {
                 onClick={googleLogin}
                 type="button"
               >
-                <Image src="/google.png" alt="Google Logo" width={24} priority/>
+                <Image src="/google.png" alt="Google Logo" width={24} height={24} priority/>
               </Button>
             </div>
           </div>

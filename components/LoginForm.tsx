@@ -51,12 +51,13 @@ export default function LoginForm() {
     const signInData = await signIn("credentials", {
       email: values.email,
       password: values.password,
-      callbackUrl:'/'
+      redirect:false
     });
     if (signInData?.ok) {
-      router.replace("/test");
+      router.push("/");
       return;
     }
+    setIsLoading(false)
     if (signInData?.status === 401) {
       toast({variant:"destructive",description:"Invalid Email or Password"});
       return;
@@ -67,9 +68,9 @@ export default function LoginForm() {
     }
   }
   return (
-    <div className="flex flex-col gap-8 px-6 py-8 w-full items-center justify-center">
+    <div className="flex flex-col gap-8 px-6  w-full items-center justify-center">
       <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg shadow p-4 sm:p-6 flex flex-col w-full sm:max-w-sm 2xl:max-w-md">
-        <h1 className="md:text-3xl text-2xl font-extrabold leading-tight tracking-wide text-gray-900 dark:text-white mb-8">
+        <h1 className="md:text-3xl text-2xl font-extrabold leading-tight tracking-wide text-gray-900 dark:text-white mb-4">
           Welcome back
         </h1>
 
@@ -135,7 +136,7 @@ export default function LoginForm() {
         </div>
         <div className="grid grid-cols-3 gap-2  ">
           <Button variant="secondary" className="col-span-3 border-gray-300 border !rounded-md" onClick={googleLogin} type="button">
-            <Image src="/google.png" alt="Google Logo" width={24}  priority/>
+            <Image src="/google.png" alt="Google Logo" width={24} height={24} priority/>
           </Button>
         </div>
       </div>

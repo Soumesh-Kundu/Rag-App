@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -50,10 +51,10 @@ export default function Page() {
             variant: "destructive",
             title: "User doesn't exist",
           });
-        break;
+          break;
         case 200:
           setIsMailSent(true);
-        break
+          break;
         case 500:
           throw new Error(message);
       }
@@ -69,8 +70,19 @@ export default function Page() {
   }
   return (
     <>
-        <main className="flex flex-col gap-8 px-6 py-8 w-full items-center justify-center h-screen">
-      {!isMailSent ? (
+      <main className="flex flex-col gap-8 px-6 py-8 w-full items-center md:justify-start  h-screen">
+        <div className="flex items-center justif-center gap-1 -translate-x-5 mt-24 lg:mt-0">
+          <Image
+            src="/chatbot_rbg.png"
+            alt="chatbot_image"
+            width={100}
+            height={100}
+          />
+          <h2 className="text-3xl font-semibold">
+            Doc<span className="text-ui-600">GPT</span>
+          </h2>
+        </div>
+        {!isMailSent ? (
           <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg shadow p-4 sm:p-6 flex flex-col w-full sm:max-w-sm 2xl:max-w-md">
             <h1 className="md:text-3xl text-2xl font-bold leading-tight tracking-wide text-gray-900 dark:text-white mb-4">
               Verify Yourself
@@ -112,14 +124,14 @@ export default function Page() {
               </Link>
             </p>
           </div>
-      ) : (
-        <div className="bg-white  dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg shadow-lg  sm:p-6 flex flex-col w-full sm:max-w-sm 2xl:max-w-md !p-10 gap-5 items-center">
-          <CheckCircle2 size={40} strokeWidth={1.9} className="text-ui-500" />
-          <p className="text-gray-500 font-semibold">
-            Reset Password mail is sent to you
-          </p>
-        </div>
-      )}
+        ) : (
+          <div className="bg-white  dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg shadow-lg  sm:p-6 flex flex-col w-full sm:max-w-sm 2xl:max-w-md !p-10 gap-5 items-center">
+            <CheckCircle2 size={40} strokeWidth={1.9} className="text-ui-500" />
+            <p className="text-gray-500 font-semibold">
+              Reset Password mail is sent to you
+            </p>
+          </div>
+        )}
       </main>
     </>
   );
