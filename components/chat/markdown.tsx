@@ -20,12 +20,9 @@ interface MarkdownProps {
 export default function Markdown({ content }: MarkdownProps) {
   return (
     <MemoizedReactMarkdown
-      className="prose !max-w-full flex-grow w-full dark:prose-invert prose-p:leading-normal prose-pre:p-0 break- text-gray-900 prose-ul:marker:text-gray-800"
+      className="prose !max-w-full flex-grow w-full dark:prose-invert prose-p:leading-normal prose-pre:p-0 break- text-gray-900 prose-ul:marker:text-gray-800 prose-p:mb-2 prose-p:last:mb-0"
       remarkPlugins={[remarkGfm, remarkMath]}
       components={{
-        p({ children }) {
-          return <p className="mb-2 last:mb-0">{children}</p>;
-        },
         code({ node, inline, className, children, ...props }) {
           if (children.length) {
             if (children[0] == "▍") {
