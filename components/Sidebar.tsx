@@ -153,7 +153,7 @@ export function SidebarComponent({ useRepos, closeSideBar }: SideBarPropos) {
 
   return (
     <TooltipProvider>
-      <aside className="sidebar shadow-sm bg-white/40 text-sm 2xl:text-base pb-3  w-full h-screen scrollbar overflow-hidden flex flex-col">
+      <aside className="sidebar shadow-sm bg-white/40 text-sm 2xl:text-base pb-3  w-full h-[100dvh] scrollbar overflow-hidden flex flex-col">
         <nav className="flex flex-col gap-4  mb-5 scrollbar overflow-y-auto  flex-grow py-4 w-full scrollbar">
           <div className="flex flex-col gap-4 scrollbar">
             <div className="px-6">
@@ -560,7 +560,7 @@ export default function Sidebar({
       <div className="lg:hidden">
         <Sheet>
           <SheetTrigger asChild>
-            <Button className="duration-500 transition-all bg-ui-600  !w-10 !h-10 !p-0 object-contain fixed top-2 left-2  rounded-full  grid place-items-center">
+            <Button className="duration-500 transition-all !bg-ui-600  !w-10 !h-10 !p-0 object-contain fixed top-2 left-2  rounded-full  grid place-items-center">
               <Menu strokeWidth={1.9} color="white" size={20} />
             </Button>
           </SheetTrigger>

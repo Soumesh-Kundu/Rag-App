@@ -20,7 +20,7 @@ export default async function page(props: {
   switch (success) {
     case 200:
       return (
-        <main className="grid place-items-center h-screen w-screen ">
+        <main className="grid place-items-center h-[100dvh] w-screen ">
           <ResetPasswordForm userid={userid as number} />
         </main>
       );

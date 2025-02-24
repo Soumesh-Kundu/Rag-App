@@ -24,7 +24,7 @@ export default async function page(props: {
   );
   const success = status === 200;
   return (
-    <div className="flex items-center justify-center h-screen w-screen">
+    <div className="flex items-center justify-center h-[100dvh] w-screen">
       <div className="bg-white  dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg shadow-lg  sm:p-6 flex flex-col w-[calc(100%-16px)] sm:w-full sm:max-w-sm 2xl:max-w-md !p-10 gap-5 items-center">
         {success ? (
           <>

@@ -9,7 +9,7 @@ export default async function page() {
     permanentRedirect("/");
   }
   return (
-    <main className="flex flex-col items-center justify-center h-screen w-screen sm:-translate-y-2.5">
+    <main className="flex flex-col items-center justify-center h-[100dvh] w-screen sm:-translate-y-2.5">
       <div className="flex items-center justif-center gap-1 -translate-x-5">
         <Image
           src="/chatbot_rbg.png"

@@ -23,7 +23,7 @@ export default async function layout({
   ]);
   return (
       <Wrapper>
-        <div className=" flex  w-full h-screen overflow-hidden  scrollbar">
+        <div className=" flex  w-full h-[100dvh] overflow-hidden  scrollbar">
           <Sidebar ownRepos={ownRepos} sharedRepos={sharedRepos} />
           <div className="flex items-center justify-center w-full h-full flex-grow">
             {children}

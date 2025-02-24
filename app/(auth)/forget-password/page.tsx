@@ -70,7 +70,7 @@ export default function Page() {
   }
   return (
     <>
-      <main className="flex flex-col px-6 sm:-translate-y-5 w-full items-center justify-center  h-screen">
+      <main className="flex flex-col px-6 sm:-translate-y-5 w-full items-center justify-center  h-[100dvh]">
         <div className="flex items-center justif-center -translate-x-5 ">
           <Image
             src="/chatbot_rbg.png"
