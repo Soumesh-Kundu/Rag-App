@@ -12,7 +12,7 @@ export default async function History({params}:{params:Promise<{id:string}>}) {
   const dyn_params=await params
   const {messages}=await getMessages(dyn_params.id)
   return (
-    <main className="w-full grid place-items-center">
+    <main className="w-full flex flex-col  h-[100dvh] pb-5 pt-14 md:pt-14 lg:pt-4">
       <ViewSection messages={messages} />
     </main>
   );

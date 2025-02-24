@@ -109,10 +109,10 @@ export default function ViewMessage({
     }
   }
   return (
-    <div className="flex items-start gap-2.5 sm:gap-4  sm:pr-5 pt-5">
+    <div className="flex items-start gap-2.5 sm:gap-4   pt-5">
       <ChatAvatar role={chatMessage.role} />
       <div className="group flex flex-1 justify-between gap-2 items-start">
-        <div className="flex-1 space-y-4 pt-1">
+        <div className="flex-grow space-y-4 pt-1">
           <Markdown content={chatMessage.content} />
           {chatMessage.data && (
             <div className="flex gap-2 flex-wrap  w-full items-center">

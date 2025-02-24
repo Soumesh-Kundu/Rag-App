@@ -88,11 +88,11 @@ export default function FileUpload() {
 
   return (
     <div className="space-y-4 max-w-6xl w-full scrollbar px-2 lg:px-0 grid place-items-center">
-      <div className="w-[calc(100%-20px)] sm:w-2/3 md:w-1/3 rounded-xl bg-white p-4 shadow-xl ">
+      <div className="w-[calc(100%-20px)] sm:w-2/3 md:w-1/2 lg:w-1/3 rounded-lg bg-white p-4 shadow-xl ">
           <form
             className={`${
               dragActive ? "bg-blue-400" : "bg-gray-100"
-            }  p-6 w-full rounded-lg   text-center flex flex-col items-center justify-center`}
+            }  p-6 w-full rounded-md   text-center flex flex-col items-center justify-center`}
             onDragEnter={handleDragEnter}
             onSubmit={(e) => e.preventDefault()}
             onDrop={handleDrop}

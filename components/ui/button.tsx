@@ -13,14 +13,14 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
 
-        "primary-rfull":"rounded-md lg:rounded-full lg:text-primary text-secondary bg-primary lg:bg-white lg:hover:bg-primary lg:hover:text-secondary",
-        "ui-rfull":"rounded-md lg:rounded-full lg:text-primary text-secondary bg-ui-500 lg:bg-white lg:hover:bg-ui-500 lg:hover:text-secondary",
+        "primary-rfull":"rounded-md xl:rounded-full xl:text-primary text-secondary bg-primary xl:bg-white xl:hover:bg-primary xl:hover:text-secondary",
+        "ui-rfull":"rounded-md xl:rounded-full xl:text-primary text-secondary bg-ui-500 xl:bg-white xl:hover:bg-ui-500 xl:hover:text-secondary",
         
-        "pale-rfull":"rounded-md lg:rounded-full lg:bg-white ",
+        "pale-rfull":"rounded-md md:rounded-full md:bg-white ",
         
-        "destructive-rfull":"rounded-md lg:rounded-full bg-red-600 lg:bg-white lg:text-red-600 lg:hover:bg-red-600 text-secondary lg:hover:text-secondary",
+        "destructive-rfull":"rounded-md xl:rounded-full bg-red-600 xl:bg-white xl:text-red-600 xl:hover:bg-red-600 text-secondary xl:hover:text-secondary",
 				
-        "blue-rfull":"rounded-md lg:rounded-full bg-blue-600 text-secondary lg:bg-white lg:text-blue-600 lg:hover:bg-blue-600 lg:hover:text-secondary",
+        "blue-rfull":"rounded-md xl:rounded-full bg-blue-600 text-secondary xl:bg-white xl:text-blue-600 xl:hover:bg-blue-600 xl:hover:text-secondary",
         outline:
           "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
         secondary:

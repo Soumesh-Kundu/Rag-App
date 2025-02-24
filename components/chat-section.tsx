@@ -129,8 +129,8 @@ export default function ChatSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transformedMessages, isStreamFinished]);
   return (
-    <div className=" mt-8 md:my-0 space-y-4  max-w-6xl w-[calc(100%-0.5rem)] lg:w-[calc(90%)] mx-auto scrollbar px-2 lg:px-0">
-      <div className="flex items-center justify-between  relative bg-slate-100/50 backdrop-blur-md rounded-full py-3 px-2 lg:p-1.5">
+    <div className=" md:my-0 space-y-4 h-[100dvh]  pb-4 pt-14  lg:pt-5 max-w-6xl w-[calc(100%-0.5rem)] lg:w-[calc(90%)] mx-auto scrollbar px-2 lg:px-0 flex flex-col">
+      <div className="flex items-center justify-between  relative bg-slate-100/50 backdrop-blur-md rounded-full p-2 lg:p-1.5">
         <Slider
           defaultValue={[topK]}
           max={30}
@@ -142,7 +142,7 @@ export default function ChatSection() {
           onMouseLeave={() => {
             setIsHover(false);
           }}
-          className="w-1/2 lg:w-[25%] ml-2"
+          className="w-1/2 md:w-1/3 lg:w-[25%] ml-2"
           onValueChange={(value) => {
             setIsHover(true)
             setTopK(value[0]);
@@ -152,10 +152,10 @@ export default function ChatSection() {
             setIsHover(false);
           }}
         />
-        <div className="items-center gap-3 hidden lg:flex">
+        <div className="items-center gap-3 hidden md:flex">
          <ChatMessagesAction currentUserRole={currentThread?.role} handleReset={handleReset} setAutoSaveOn={setAutoSaveOn} isAutoSaveOn={isAutoSaveOn} isPending= {isPending}/>
         </div>
-        <div className="lg:hidden pr-3">
+        <div className="md:hidden pr-3">
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center justify-center">
               <Ellipsis className="h-6 w-6" />

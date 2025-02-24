@@ -29,23 +29,6 @@ const reverseRoleMap = new Map<Role, string>([
   [Role.commentor, "Commentor"],
 ]);
 
-// const users: AccessUsers = {
-//   2: {
-//     id: 2,
-//     name: "Jane Doe",
-//     role: Role.editor,
-//   },
-//   3: {
-//     id: 3,
-//     name: "John Smith",
-//     role: Role.viewer,
-//   },
-//   4: {
-//     id: 4,
-//     name: "Jane Smith",
-//     role: Role.commentor,
-//   },
-// };
 function deepCopy(data: object) {
   return JSON.parse(JSON.stringify(data));
 }

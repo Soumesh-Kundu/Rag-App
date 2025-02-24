@@ -11,7 +11,7 @@ export default function NewChat() {
         className={`${buttonVariants({ variant: "primary-rfull" })} gap-2 w-full`}
       >
         <FolderPlusIcon className="w-4 h-4" />
-        Add files
+        <span className="md:hidden xl:inline">Add files</span>
       </Link>
     </div>
   );

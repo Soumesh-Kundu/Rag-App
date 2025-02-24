@@ -59,9 +59,9 @@ export default function ChatMessages(
     setIsUpdated((prev) => !prev);
   }
   return (
-    <div className="w-full rounded-lg bg-white p-4 shadow-xl pb-0">
+    <div className="w-full relative flex-grow min-h-0 flex flex-col  rounded-lg bg-white  shadow-xl px-4 py-2">
       <div
-        className="flex h-[55dvh] scrollbar pr-1 flex-col gap-5 divide-y overflow-y-auto pb-4"
+        className="flex-grow overflow-y-auto flex  p-4 pt-0 scrollbar  flex-col gap-5 divide-y"
         ref={scrollableChatContainerRef}
       >
         {messages.length > 0 ? (
@@ -90,14 +90,14 @@ export default function ChatMessages(
           </>
         )}
       </div>
-      <div className="flex justify-end py-4">
-        <ChatActions
-          reload={props.reload}
-          stop={props.stop}
-          showReload={showReload}
-          showStop={showStop}
-        />
-      </div>
+      <div className="flex justify-end bg-white py-4 z-50  w-full">
+         <ChatActions
+           reload={props.reload}
+           stop={props.stop}
+           showReload={showReload}
+           showStop={showStop}
+         />
+       </div>
     </div>
   );
 }

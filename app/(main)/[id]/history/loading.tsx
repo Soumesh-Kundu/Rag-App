@@ -4,7 +4,7 @@ import { Separator } from "@radix-ui/react-dropdown-menu";
 export default function Loading() {
   return (
     <>
-      <div className="space-y-4 max-w-6xl w-[calc(100%-2rem)] scrollbar px-2 lg:px-0">
+      <div className="space-y-4 md:max-w-6xl w-[calc(100%-2rem)] scrollbar  lg:px-0">
         <div className="w-full rounded-xl bg-white p-4 shadow-xl pb-0">
           <div className="flex max-h-[85dvh] scrollbar pr-1 flex-col gap-5 divide-y overflow-y-auto pb-4 duration-300">
           <>

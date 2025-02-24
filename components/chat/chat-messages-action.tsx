@@ -8,6 +8,7 @@ import { Switch } from "../ui/switch";
 import { Role } from "@prisma/client";
 import ManageAccess from "@/components/chat/ManageAccess";
 import Dotwave from "../Loaders/Dotwave";
+import Ring from "../Loaders/Ring";
 
 type ActionProps = {
   currentUserRole: Role | undefined;
@@ -29,7 +30,8 @@ export default function ChatMessagesAction({
     <>
       {isAdminOrEditor && (
         <ManageAccess>
-            <User2 size={24} /> Manage
+          <User2 size={24} />{" "}
+          <span className="md:hidden xl:inline">Manage</span>
         </ManageAccess>
       )}
       {isAdminOrEditor && (
@@ -43,13 +45,18 @@ export default function ChatMessagesAction({
             }`}
           >
             {isPending ? (
-              <span className="px-2.5">
-                <Dotwave size={40} speed={1.6} color="white"></Dotwave>
+              <span className="px-2.5 md:px-0 xl:px-2.5">
+                <span className=" inline md:hidden xl:inline">
+                  <Dotwave size={40} speed={1.6} color="white"></Dotwave>
+                </span>
+                <span className=" hidden md:inline xl:hidden">
+                  <Ring size={18} color="white" stroke={1.6}></Ring>
+                </span>
               </span>
             ) : (
               <>
                 <TrashIcon className="w-4 h-4" />
-                Reset
+                <span className="md:hidden xl:inline">Reset</span>
               </>
             )}
           </Button>
@@ -62,7 +69,7 @@ export default function ChatMessagesAction({
           className="flex items-center gap-2"
         >
           <ShareIcon className="w-4 h-4" />
-          Share
+          <span className="md:hidden xl:inline">Share</span>
         </Button>
       </ShareRepo>
       <div

@@ -24,7 +24,7 @@ function ChatMessageData({ messageData }: { messageData: JSONValue }) {
   const { result } = messageData as unknown as ChatMessageExtraData;
   if (result.length > 0) {
     return (
-      <div className="flex gap-2 flex-wrap  w-full items-center">
+      <div className="flex gap-2 flex-wrap   w-full items-center">
         {result.map(({ score, text }, index) => {
           const percentageScore = (score * 100).toString().slice(0, 5);
           return (

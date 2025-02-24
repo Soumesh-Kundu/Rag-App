@@ -17,7 +17,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body
-        className={` flex background-gradient items-start overflow-hidden min-h-screen w-full scrollbar ${inter.className}`}
+        className={` flex background-gradient items-start overflow-hidden min-h-[100dvh] w-full scrollbar ${inter.className}`}
       >
           <Toaster />
         <SessionWrapper>{children}</SessionWrapper>
